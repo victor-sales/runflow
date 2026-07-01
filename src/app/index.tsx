@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
@@ -6,6 +6,13 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Screen } from '@/components/ui/Screen';
+
+const routes = {
+  history: '/history' as Href,
+  interval: '/workout/interval' as Href,
+  settings: '/settings' as Href,
+  workout: '/workout' as Href,
+};
 
 export default function HomeScreen() {
   return (
@@ -21,7 +28,7 @@ export default function HomeScreen() {
         <Link asChild href="/workout/free-run">
           <Button fullWidth label="Iniciar corrida livre" />
         </Link>
-        <Link asChild href="/workout">
+        <Link asChild href={routes.workout}>
           <Button fullWidth label="Escolher treino" variant="secondary" />
         </Link>
       </View>
@@ -34,13 +41,13 @@ export default function HomeScreen() {
       <Card>
         <AppText variant="subtitle">Atalhos</AppText>
         <View style={styles.cardActions}>
-          <Link asChild href="/workout/interval">
+          <Link asChild href={routes.interval}>
             <Button label="Treinos intervalados" variant="secondary" />
           </Link>
-          <Link asChild href="/history">
+          <Link asChild href={routes.history}>
             <Button label="Historico" variant="secondary" />
           </Link>
-          <Link asChild href="/settings">
+          <Link asChild href={routes.settings}>
             <Button label="Configuracoes" variant="secondary" />
           </Link>
         </View>

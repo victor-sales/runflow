@@ -1,42 +1,24 @@
 import type { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, View, type ViewProps } from 'react-native';
+import { ScrollView, View, type ViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ScreenProps = PropsWithChildren<
   ViewProps & {
+    className?: string;
     scroll?: boolean;
   }
 >;
 
-export function Screen({ children, scroll = true, style, ...props }: ScreenProps) {
+export function Screen({ children, className = '', scroll = true, ...props }: ScreenProps) {
   const content = (
-    <View style={[styles.content, style]} {...props}>
+    <View className={`flex-1 w-full max-w-[760px] self-center gap-[18px] px-5 py-6 ${className}`} {...props}>
       {children}
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {scroll ? <ScrollView contentContainerStyle={styles.scrollContent}>{content}</ScrollView> : content}
+    <SafeAreaView className="flex-1 bg-slate-50">
+      {scroll ? <ScrollView contentContainerClassName="flex-grow">{content}</ScrollView> : content}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 760,
-    alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    gap: 18,
-  },
-});

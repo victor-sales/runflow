@@ -1,10 +1,12 @@
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
+
+const intervalHref = '/workout/interval' as Href;
 
 export default function WorkoutTypeScreen() {
   return (
@@ -27,7 +29,7 @@ export default function WorkoutTypeScreen() {
       <Card>
         <AppText variant="subtitle">Treino intervalado</AppText>
         <AppText color="secondary">Lista e criacao de modelos de treino intervalado.</AppText>
-        <Link asChild href="/workout/interval">
+        <Link asChild href={intervalHref}>
           <Button label="Ver treinos intervalados" variant="secondary" />
         </Link>
       </Card>

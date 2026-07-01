@@ -1,17 +1,15 @@
-import { StyleSheet } from 'react-native';
-
 import { AppText } from '@/components/ui/AppText';
 import { Card } from '@/components/ui/Card';
 
 type MetricCardProps = {
+  helper?: string;
   label: string;
   value: string;
-  helper?: string;
 };
 
 export function MetricCard({ helper, label, value }: MetricCardProps) {
   return (
-    <Card style={styles.card}>
+    <Card className="min-w-[140px] flex-1">
       <AppText color="muted" variant="caption">
         {label}
       </AppText>
@@ -24,10 +22,3 @@ export function MetricCard({ helper, label, value }: MetricCardProps) {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flex: 1,
-    minWidth: 140,
-  },
-});
