@@ -17,7 +17,10 @@ import { formatDistance, formatDuration, formatPace } from '@/utils/format';
 
 export default function FreeRunScreen() {
   const [isSaving, setIsSaving] = useState(false);
+  const [isTrackingStarting, setIsTrackingStarting] = useState(false);
+  const isTrackingStartingRef = useRef(false);
   const subscriptionRef = useRef<LocationTrackingSubscription | null>(null);
+  const trackingRequestIdRef = useRef(0);
   const {
     averagePace,
     currentPace,
@@ -42,22 +45,50 @@ export default function FreeRunScreen() {
   } = useActiveWorkoutStore();
 
   const stopTracking = () => {
+    trackingRequestIdRef.current += 1;
     stopLocationTracking(subscriptionRef.current);
     subscriptionRef.current = null;
   };
 
   const startTracking = async (): Promise<boolean> => {
-    const subscription = await startLocationTracking(
-      addPoint,
-      setErrorMessage,
-      (signal) => setGpsSignal(signal.status, signal.message),
-    );
-    subscriptionRef.current = subscription;
+    if (subscriptionRef.current) {
+      return true;
+    }
 
-    return subscription !== null;
+    if (isTrackingStartingRef.current) {
+      return false;
+    }
+
+    isTrackingStartingRef.current = true;
+    setIsTrackingStarting(true);
+    const requestId = trackingRequestIdRef.current;
+
+    try {
+      const subscription = await startLocationTracking(
+        addPoint,
+        setErrorMessage,
+        (signal) => setGpsSignal(signal.status, signal.message),
+      );
+
+      if (requestId !== trackingRequestIdRef.current) {
+        stopLocationTracking(subscription);
+        return false;
+      }
+
+      subscriptionRef.current = subscription;
+
+      return subscription !== null;
+    } finally {
+      isTrackingStartingRef.current = false;
+      setIsTrackingStarting(false);
+    }
   };
 
   const handleStart = async () => {
+    if (isTrackingStartingRef.current || subscriptionRef.current) {
+      return;
+    }
+
     setErrorMessage(null);
 
     const hasPermission = await requestForegroundLocationPermission();
@@ -82,6 +113,10 @@ export default function FreeRunScreen() {
   };
 
   const handleResume = async () => {
+    if (isTrackingStartingRef.current || subscriptionRef.current) {
+      return;
+    }
+
     setErrorMessage(null);
 
     const started = await startTracking();
@@ -185,7 +220,12 @@ export default function FreeRunScreen() {
 
       <View style={styles.actions}>
         {canStart ? (
-          <Button fullWidth label="Iniciar treino" onPress={handleStart} />
+          <Button
+            disabled={isTrackingStarting}
+            fullWidth
+            label={isTrackingStarting ? 'Iniciando...' : 'Iniciar treino'}
+            onPress={handleStart}
+          />
         ) : null}
         {status === 'ACTIVE' ? (
           <Button
@@ -197,8 +237,9 @@ export default function FreeRunScreen() {
         ) : null}
         {status === 'PAUSED' ? (
           <Button
+            disabled={isTrackingStarting}
             fullWidth
-            label="Retomar"
+            label={isTrackingStarting ? 'Retomando...' : 'Retomar'}
             onPress={handleResume}
             variant="secondary"
           />

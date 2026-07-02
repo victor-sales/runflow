@@ -24,6 +24,7 @@ type ActiveWorkoutStoreState = ActiveWorkoutMetrics & {
   errorMessage: string | null;
   gpsSignal: GpsSignalStatus;
   gpsSignalMessage: string | null;
+  pointGroups: LocationPoint[][];
   points: LocationPoint[];
   segments: WorkoutSegment[];
   startedAt: string | null;
@@ -61,6 +62,7 @@ const initialState: ActiveWorkoutStoreState = {
   errorMessage: null,
   gpsSignal: 'lost',
   gpsSignalMessage: null,
+  pointGroups: [],
   points: [],
   segments: [],
   startedAt: null,
@@ -68,14 +70,19 @@ const initialState: ActiveWorkoutStoreState = {
 };
 
 function calculateMetrics(
-  points: readonly LocationPoint[],
+  pointGroups: readonly LocationPoint[][],
   elapsedSeconds: number,
 ): ActiveWorkoutMetrics {
-  const distanceMeters = calculateTotalDistance(points);
+  const latestPointGroup = pointGroups.at(-1) ?? [];
+  const distanceMeters = pointGroups.reduce(
+    (totalDistance, pointGroup) =>
+      totalDistance + calculateTotalDistance(pointGroup),
+    0,
+  );
 
   return {
     averagePace: calculateAvgPace(elapsedSeconds, distanceMeters),
-    currentPace: calculateCurrentPace(points),
+    currentPace: calculateCurrentPace(latestPointGroup),
     distanceMeters,
     elapsedSeconds,
   };
@@ -89,11 +96,16 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set) => ({
         return state;
       }
 
-      const points = [...state.points, point];
+      const pointGroups =
+        state.pointGroups.length > 0 ? [...state.pointGroups] : [[]];
+      const latestPointGroup = pointGroups.at(-1) ?? [];
+
+      pointGroups[pointGroups.length - 1] = [...latestPointGroup, point];
 
       return {
-        ...calculateMetrics(points, state.elapsedSeconds),
-        points,
+        ...calculateMetrics(pointGroups, state.elapsedSeconds),
+        pointGroups,
+        points: [...state.points, point],
       };
     }),
   cancelWorkout: () =>
@@ -114,6 +126,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set) => ({
   resetWorkout: () => set(initialState),
   resumeWorkout: () =>
     set((state) => ({
+      pointGroups:
+        state.status === 'PAUSED' && state.pointGroups.at(-1)?.length
+          ? [...state.pointGroups, []]
+          : state.pointGroups,
       status: state.status === 'PAUSED' ? 'ACTIVE' : state.status,
     })),
   setCurrentSegment: (segment) => set({ currentSegment: segment }),
@@ -123,9 +139,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set) => ({
   startWorkout: (startedAt = new Date().toISOString()) =>
     set({
       ...initialState,
+      pointGroups: [[]],
       startedAt,
       status: 'ACTIVE',
     }),
   updateMetrics: (elapsedSeconds) =>
-    set((state) => calculateMetrics(state.points, elapsedSeconds)),
+    set((state) => calculateMetrics(state.pointGroups, elapsedSeconds)),
 }));
