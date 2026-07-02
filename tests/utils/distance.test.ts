@@ -35,4 +35,28 @@ describe('distance utils', () => {
     expect(distance).toBeGreaterThan(222);
     expect(distance).toBeLessThan(223);
   });
+
+  it('filters unrealistic GPS jumps before summing total distance', () => {
+    const distance = calculateTotalDistance([
+      { latitude: 0, longitude: 0, timestamp: '2026-07-02T12:00:00.000Z' },
+      {
+        latitude: 0,
+        longitude: 0.001,
+        timestamp: '2026-07-02T12:00:10.000Z',
+      },
+      {
+        latitude: 0.1,
+        longitude: 0.1,
+        timestamp: '2026-07-02T12:00:11.000Z',
+      },
+      {
+        latitude: 0,
+        longitude: 0.002,
+        timestamp: '2026-07-02T12:00:20.000Z',
+      },
+    ]);
+
+    expect(distance).toBeGreaterThan(111);
+    expect(distance).toBeLessThan(112);
+  });
 });

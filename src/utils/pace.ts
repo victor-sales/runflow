@@ -103,8 +103,14 @@ export const calculateCurrentPace = (
     return null;
   }
 
+  const durationSeconds = lastTimestampSeconds - firstTimestampSeconds;
+
+  if (durationSeconds < MIN_CURRENT_PACE_WINDOW_SECONDS) {
+    return null;
+  }
+
   return calculateAvgPace(
-    lastTimestampSeconds - firstTimestampSeconds,
+    durationSeconds,
     calculateTotalDistance(windowPoints),
   );
 };

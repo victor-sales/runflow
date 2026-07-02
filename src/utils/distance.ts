@@ -2,14 +2,34 @@ export type DistancePoint = {
   latitude: number;
   longitude: number;
   accuracy?: number | null;
+  timestamp?: string | number | Date;
 };
 
 const EARTH_RADIUS_METERS = 6371000;
 const MAX_ACCEPTED_ACCURACY_METERS = 30;
+const MAX_REALISTIC_RUNNING_SPEED_METERS_PER_SECOND = 12;
+const MAX_SEGMENT_DISTANCE_WITHOUT_TIMESTAMP_METERS = 1000;
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
 const isFiniteNumber = (value: number): boolean => Number.isFinite(value);
+
+const getTimestampSeconds = (
+  timestamp: string | number | Date | undefined,
+): number | null => {
+  if (timestamp === undefined) {
+    return null;
+  }
+
+  const milliseconds =
+    timestamp instanceof Date
+      ? timestamp.getTime()
+      : typeof timestamp === 'number'
+        ? timestamp
+        : Date.parse(timestamp);
+
+  return Number.isFinite(milliseconds) ? milliseconds / 1000 : null;
+};
 
 export const isValidDistancePoint = (point: DistancePoint): boolean => {
   const hasValidLatitude =
@@ -55,6 +75,35 @@ export const calculateDistanceBetweenPoints = (
   return Number.isFinite(distanceMeters) ? distanceMeters : 0;
 };
 
+const isRealisticDistanceSegment = (
+  start: DistancePoint,
+  end: DistancePoint,
+): boolean => {
+  const distanceMeters = calculateDistanceBetweenPoints(start, end);
+
+  if (distanceMeters === 0) {
+    return true;
+  }
+
+  const startTimestampSeconds = getTimestampSeconds(start.timestamp);
+  const endTimestampSeconds = getTimestampSeconds(end.timestamp);
+
+  if (startTimestampSeconds === null || endTimestampSeconds === null) {
+    return distanceMeters <= MAX_SEGMENT_DISTANCE_WITHOUT_TIMESTAMP_METERS;
+  }
+
+  const durationSeconds = endTimestampSeconds - startTimestampSeconds;
+
+  if (durationSeconds <= 0) {
+    return false;
+  }
+
+  return (
+    distanceMeters / durationSeconds <=
+    MAX_REALISTIC_RUNNING_SPEED_METERS_PER_SECOND
+  );
+};
+
 export const calculateTotalDistance = (
   points: readonly DistancePoint[],
 ): number => {
@@ -65,9 +114,12 @@ export const calculateTotalDistance = (
       return totalDistance;
     }
 
-    return (
-      totalDistance +
-      calculateDistanceBetweenPoints(validPoints[index - 1], point)
-    );
+    const previousPoint = validPoints[index - 1];
+
+    if (!isRealisticDistanceSegment(previousPoint, point)) {
+      return totalDistance;
+    }
+
+    return totalDistance + calculateDistanceBetweenPoints(previousPoint, point);
   }, 0);
 };

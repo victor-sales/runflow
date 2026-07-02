@@ -40,4 +40,24 @@ describe('pace utils', () => {
       ]),
     ).toBeNull();
   });
+
+  it('does not calculate current pace before the minimum moving window duration', () => {
+    expect(
+      calculateCurrentPace(
+        [
+          {
+            latitude: 0,
+            longitude: 0,
+            timestamp: '2026-07-02T12:00:00.000Z',
+          },
+          {
+            latitude: 0,
+            longitude: 0.001,
+            timestamp: '2026-07-02T12:00:09.000Z',
+          },
+        ],
+        20,
+      ),
+    ).toBeNull();
+  });
 });
