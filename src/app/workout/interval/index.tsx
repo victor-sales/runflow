@@ -12,14 +12,16 @@ export default function IntervalWorkoutListScreen() {
       <View style={styles.header}>
         <AppText variant="title">Treinos intervalados</AppText>
         <AppText color="secondary">
-          Seus modelos de tiro aparecerao aqui quando a persistencia local for implementada.
+          Seus modelos de tiro aparecerao aqui quando a persistencia local for
+          implementada.
         </AppText>
       </View>
 
       <Card>
         <AppText variant="subtitle">Nenhum treino criado</AppText>
         <AppText color="secondary">
-          A criacao de templates ainda e apenas uma tela de bootstrap nesta fase.
+          A criacao de templates ainda e apenas uma tela de bootstrap nesta
+          fase.
         </AppText>
         <Link asChild href="/workout/interval/create">
           <Button label="Criar treino intervalado" />

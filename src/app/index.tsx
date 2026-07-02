@@ -20,7 +20,8 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <AppText variant="title">RunFlow</AppText>
         <AppText color="secondary">
-          Corra no seu ritmo, registre treinos localmente e prepare seus intervalados.
+          Corra no seu ritmo, registre treinos localmente e prepare seus
+          intervalados.
         </AppText>
       </View>
 
@@ -34,8 +35,16 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.metrics}>
-        <MetricCard helper="Sera exibido apos salvar treinos" label="Ultimo treino" value="--" />
-        <MetricCard helper="Historico local nas proximas fases" label="Total" value="0 km" />
+        <MetricCard
+          helper="Sera exibido apos salvar treinos"
+          label="Ultimo treino"
+          value="--"
+        />
+        <MetricCard
+          helper="Historico local nas proximas fases"
+          label="Total"
+          value="0 km"
+        />
       </View>
 
       <Card>

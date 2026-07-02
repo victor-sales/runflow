@@ -272,21 +272,13 @@ CREATE TABLE IF NOT EXISTS interval_templates (
 ## 9. Tipos principais
 
 ```ts
-export type WorkoutType = "FREE_RUN" | "INTERVAL";
+export type WorkoutType = 'FREE_RUN' | 'INTERVAL';
 
-export type WorkoutStatus =
-  | "ACTIVE"
-  | "PAUSED"
-  | "COMPLETED"
-  | "CANCELED";
+export type WorkoutStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELED';
 
-export type SegmentType =
-  | "WARMUP"
-  | "RUN"
-  | "REST"
-  | "COOLDOWN";
+export type SegmentType = 'WARMUP' | 'RUN' | 'REST' | 'COOLDOWN';
 
-export type TargetType = "TIME" | "DISTANCE";
+export type TargetType = 'TIME' | 'DISTANCE';
 ```
 
 Entidades esperadas:

@@ -22,7 +22,8 @@ export default function CreateIntervalWorkoutScreen() {
       <View style={styles.header}>
         <AppText variant="title">Criar treino</AppText>
         <AppText color="secondary">
-          Formulario, validacao com Zod e salvamento entram na fase de templates intervalados.
+          Formulario, validacao com Zod e salvamento entram na fase de templates
+          intervalados.
         </AppText>
       </View>
 

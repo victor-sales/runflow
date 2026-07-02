@@ -40,15 +40,15 @@ Comparar distância acumulada do segmento com `targetValue`.
 ## API pública sugerida
 
 ```ts
-createIntervalSegments(template)
-createIntervalEngine(segments)
-getCurrentSegment()
-updateProgress(input)
-advanceSegment()
-pause()
-resume()
-cancel()
-isCompleted()
+createIntervalSegments(template);
+createIntervalEngine(segments);
+getCurrentSegment();
+updateProgress(input);
+advanceSegment();
+pause();
+resume();
+cancel();
+isCompleted();
 ```
 
 ## Testes obrigatórios

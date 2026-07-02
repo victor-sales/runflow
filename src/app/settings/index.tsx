@@ -10,7 +10,8 @@ export default function SettingsScreen() {
       <Card>
         <AppText variant="subtitle">Preferencias</AppText>
         <AppText color="secondary">
-          Tema, unidades e alertas poderao ser ajustados em fases futuras do MVP.
+          Tema, unidades e alertas poderao ser ajustados em fases futuras do
+          MVP.
         </AppText>
       </Card>
     </Screen>

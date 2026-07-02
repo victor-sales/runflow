@@ -9,16 +9,28 @@ type ScreenProps = PropsWithChildren<
   }
 >;
 
-export function Screen({ children, className = '', scroll = true, ...props }: ScreenProps) {
+export function Screen({
+  children,
+  className = '',
+  scroll = true,
+  ...props
+}: ScreenProps) {
   const content = (
-    <View className={`flex-1 w-full max-w-[760px] self-center gap-[18px] px-5 py-6 ${className}`} {...props}>
+    <View
+      className={`flex-1 w-full max-w-[760px] self-center gap-[18px] px-5 py-6 ${className}`}
+      {...props}
+    >
       {children}
     </View>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      {scroll ? <ScrollView contentContainerClassName="flex-grow">{content}</ScrollView> : content}
+      {scroll ? (
+        <ScrollView contentContainerClassName="flex-grow">{content}</ScrollView>
+      ) : (
+        content
+      )}
     </SafeAreaView>
   );
 }

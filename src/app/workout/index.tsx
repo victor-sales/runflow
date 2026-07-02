@@ -14,13 +14,16 @@ export default function WorkoutTypeScreen() {
       <View style={styles.header}>
         <AppText variant="title">Escolha o treino</AppText>
         <AppText color="secondary">
-          Nesta fase, as telas sao estruturais. A execucao real entra nas fases seguintes.
+          Nesta fase, as telas sao estruturais. A execucao real entra nas fases
+          seguintes.
         </AppText>
       </View>
 
       <Card>
         <AppText variant="subtitle">Corrida livre</AppText>
-        <AppText color="secondary">Tela preparada para receber GPS, metricas e controles.</AppText>
+        <AppText color="secondary">
+          Tela preparada para receber GPS, metricas e controles.
+        </AppText>
         <Link asChild href="/workout/free-run">
           <Button label="Abrir corrida livre" />
         </Link>
@@ -28,7 +31,9 @@ export default function WorkoutTypeScreen() {
 
       <Card>
         <AppText variant="subtitle">Treino intervalado</AppText>
-        <AppText color="secondary">Lista e criacao de modelos de treino intervalado.</AppText>
+        <AppText color="secondary">
+          Lista e criacao de modelos de treino intervalado.
+        </AppText>
         <Link asChild href={intervalHref}>
           <Button label="Ver treinos intervalados" variant="secondary" />
         </Link>

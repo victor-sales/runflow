@@ -11,7 +11,8 @@ export default function FreeRunScreen() {
       <View style={styles.header}>
         <AppText variant="title">Corrida livre</AppText>
         <AppText color="secondary">
-          Estrutura inicial da tela. GPS, pausa, finalizacao e persistencia ficam para fases futuras.
+          Estrutura inicial da tela. GPS, pausa, finalizacao e persistencia
+          ficam para fases futuras.
         </AppText>
       </View>
 

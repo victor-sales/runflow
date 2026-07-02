@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from 'react';
 import { Text, type TextProps } from 'react-native';
 
-export type AppTextVariant = 'body' | 'title' | 'subtitle' | 'caption' | 'metric';
+export type AppTextVariant =
+  'body' | 'title' | 'subtitle' | 'caption' | 'metric';
 type AppTextColor = 'primary' | 'secondary' | 'muted' | 'inverse' | 'success';
 
 type AppTextProps = PropsWithChildren<
@@ -39,7 +40,8 @@ export function AppText({
     <Text
       className={`${variantClasses[variant]} ${colorClasses[color]} ${className}`}
       style={[{ includeFontPadding: false }, props.style]}
-      {...props}>
+      {...props}
+    >
       {children}
     </Text>
   );

@@ -38,9 +38,13 @@ export function Button({
         buttonClasses[variant]
       } ${fullWidth ? 'self-stretch' : ''} ${disabled ? 'opacity-45' : 'active:opacity-80'} ${className}`}
       disabled={disabled}
-      {...props}>
+      {...props}
+    >
       {children ?? (
-        <AppText color={variant === 'primary' ? 'inverse' : 'primary'} variant="body">
+        <AppText
+          color={variant === 'primary' ? 'inverse' : 'primary'}
+          variant="body"
+        >
           {title ?? label}
         </AppText>
       )}
