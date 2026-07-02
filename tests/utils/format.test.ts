@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDistance, formatDuration, formatPace } from '../../src/utils/format';
+import {
+  formatDistance,
+  formatDuration,
+  formatPace,
+} from '../../src/utils/format';
 
 describe('format utils', () => {
   it('formats pace', () => {

@@ -1,4 +1,8 @@
-import { calculateTotalDistance, isValidDistancePoint, type DistancePoint } from './distance';
+import {
+  calculateTotalDistance,
+  isValidDistancePoint,
+  type DistancePoint,
+} from './distance';
 
 export type PacePoint = DistancePoint & {
   timestamp: string | number | Date;
@@ -7,7 +11,9 @@ export type PacePoint = DistancePoint & {
 const MIN_CURRENT_PACE_WINDOW_SECONDS = 10;
 const MAX_CURRENT_PACE_WINDOW_SECONDS = 20;
 
-const getTimestampSeconds = (timestamp: string | number | Date): number | null => {
+const getTimestampSeconds = (
+  timestamp: string | number | Date,
+): number | null => {
   const milliseconds =
     timestamp instanceof Date
       ? timestamp.getTime()
@@ -49,7 +55,9 @@ export const calculateAvgPace = (
   const distanceKilometers = distanceMeters / 1000;
   const paceSecondsPerKilometer = durationSeconds / distanceKilometers;
 
-  return Number.isFinite(paceSecondsPerKilometer) ? Math.round(paceSecondsPerKilometer) : null;
+  return Number.isFinite(paceSecondsPerKilometer)
+    ? Math.round(paceSecondsPerKilometer)
+    : null;
 };
 
 export const calculateCurrentPace = (
@@ -57,7 +65,10 @@ export const calculateCurrentPace = (
   windowSeconds = MAX_CURRENT_PACE_WINDOW_SECONDS,
 ): number | null => {
   const validPoints = points
-    .map((point) => ({ point, timestampSeconds: getTimestampSeconds(point.timestamp) }))
+    .map((point) => ({
+      point,
+      timestampSeconds: getTimestampSeconds(point.timestamp),
+    }))
     .filter(
       (
         entry,
@@ -71,8 +82,10 @@ export const calculateCurrentPace = (
     return null;
   }
 
-  const latestTimestampSeconds = validPoints[validPoints.length - 1].timestampSeconds;
-  const windowStartSeconds = latestTimestampSeconds - clampCurrentPaceWindow(windowSeconds);
+  const latestTimestampSeconds =
+    validPoints[validPoints.length - 1].timestampSeconds;
+  const windowStartSeconds =
+    latestTimestampSeconds - clampCurrentPaceWindow(windowSeconds);
   const windowPoints = validPoints
     .filter((entry) => entry.timestampSeconds >= windowStartSeconds)
     .map((entry) => entry.point);
@@ -82,7 +95,9 @@ export const calculateCurrentPace = (
   }
 
   const firstTimestampSeconds = getTimestampSeconds(windowPoints[0].timestamp);
-  const lastTimestampSeconds = getTimestampSeconds(windowPoints[windowPoints.length - 1].timestamp);
+  const lastTimestampSeconds = getTimestampSeconds(
+    windowPoints[windowPoints.length - 1].timestamp,
+  );
 
   if (firstTimestampSeconds === null || lastTimestampSeconds === null) {
     return null;

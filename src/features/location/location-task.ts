@@ -16,7 +16,9 @@ function isLocationPoint(point: LocationPoint | null): point is LocationPoint {
   return point !== null;
 }
 
-export function defineBackgroundLocationTask(onPoints?: BackgroundLocationPointHandler): void {
+export function defineBackgroundLocationTask(
+  onPoints?: BackgroundLocationPointHandler,
+): void {
   if (TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
     return;
   }
@@ -28,7 +30,9 @@ export function defineBackgroundLocationTask(onPoints?: BackgroundLocationPointH
         return;
       }
 
-      const points = data.locations.map(normalizeLocationPoint).filter(isLocationPoint);
+      const points = data.locations
+        .map(normalizeLocationPoint)
+        .filter(isLocationPoint);
 
       if (points.length > 0) {
         onPoints?.(points);

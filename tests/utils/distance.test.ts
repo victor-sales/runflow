@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateDistanceBetweenPoints, calculateTotalDistance } from '../../src/utils/distance';
+import {
+  calculateDistanceBetweenPoints,
+  calculateTotalDistance,
+} from '../../src/utils/distance';
 
 describe('distance utils', () => {
   it('calculates distance between two points using Haversine', () => {

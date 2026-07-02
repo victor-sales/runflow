@@ -21,7 +21,9 @@ type LocationObjectOverrides = Omit<Partial<LocationObject>, 'coords'> & {
   coords?: Partial<LocationObject['coords']>;
 };
 
-function createLocationObject(overrides: LocationObjectOverrides = {}): LocationObject {
+function createLocationObject(
+  overrides: LocationObjectOverrides = {},
+): LocationObject {
   const location: LocationObject = {
     coords: {
       latitude: -23.561684,
@@ -62,21 +64,37 @@ describe('location service', () => {
   });
 
   it('filters points with accuracy greater than 30 meters', () => {
-    expect(normalizeLocationPoint(createLocationObject({ coords: { accuracy: 31 } }))).toBeNull();
+    expect(
+      normalizeLocationPoint(
+        createLocationObject({ coords: { accuracy: 31 } }),
+      ),
+    ).toBeNull();
   });
 
   it('accepts points with null accuracy', () => {
     expect(
-      normalizeLocationPoint(createLocationObject({ coords: { accuracy: null } })),
+      normalizeLocationPoint(
+        createLocationObject({ coords: { accuracy: null } }),
+      ),
     ).toMatchObject({
       accuracy: null,
     });
   });
 
   it('filters invalid latitude, longitude, and timestamp', () => {
-    expect(normalizeLocationPoint(createLocationObject({ coords: { latitude: 91 } }))).toBeNull();
-    expect(normalizeLocationPoint(createLocationObject({ coords: { longitude: 181 } }))).toBeNull();
-    expect(normalizeLocationPoint(createLocationObject({ timestamp: Number.NaN }))).toBeNull();
+    expect(
+      normalizeLocationPoint(
+        createLocationObject({ coords: { latitude: 91 } }),
+      ),
+    ).toBeNull();
+    expect(
+      normalizeLocationPoint(
+        createLocationObject({ coords: { longitude: 181 } }),
+      ),
+    ).toBeNull();
+    expect(
+      normalizeLocationPoint(createLocationObject({ timestamp: Number.NaN })),
+    ).toBeNull();
     expect(
       isValidLocationPoint({
         latitude: -23.561684,

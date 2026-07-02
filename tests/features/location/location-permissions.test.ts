@@ -14,13 +14,17 @@ describe('location permissions', () => {
   });
 
   it('returns true when foreground location permission is granted', async () => {
-    locationMock.requestForegroundPermissionsAsync.mockResolvedValue({ granted: true });
+    locationMock.requestForegroundPermissionsAsync.mockResolvedValue({
+      granted: true,
+    });
 
     await expect(requestForegroundLocationPermission()).resolves.toBe(true);
   });
 
   it('returns false when foreground location permission is denied', async () => {
-    locationMock.requestForegroundPermissionsAsync.mockResolvedValue({ granted: false });
+    locationMock.requestForegroundPermissionsAsync.mockResolvedValue({
+      granted: false,
+    });
 
     await expect(requestForegroundLocationPermission()).resolves.toBe(false);
   });

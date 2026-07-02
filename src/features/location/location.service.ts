@@ -35,8 +35,10 @@ export function isValidLocationPoint(point: LocationPoint): boolean {
       point.accuracy >= 0 &&
       point.accuracy <= MAX_LOCATION_ACCURACY_METERS);
 
-  const hasValidAltitude = point.altitude === null || isFiniteNumber(point.altitude);
-  const hasValidSpeed = point.speed === null || (isFiniteNumber(point.speed) && point.speed >= 0);
+  const hasValidAltitude =
+    point.altitude === null || isFiniteNumber(point.altitude);
+  const hasValidSpeed =
+    point.speed === null || (isFiniteNumber(point.speed) && point.speed >= 0);
 
   return (
     hasValidCoordinates &&
@@ -47,7 +49,9 @@ export function isValidLocationPoint(point: LocationPoint): boolean {
   );
 }
 
-export function normalizeLocationPoint(location: Location.LocationObject): LocationPoint | null {
+export function normalizeLocationPoint(
+  location: Location.LocationObject,
+): LocationPoint | null {
   if (!Number.isFinite(location.timestamp)) {
     return null;
   }
@@ -85,7 +89,11 @@ export async function startLocationTracking(
       onError,
     );
   } catch (error) {
-    onError?.(error instanceof Error ? error.message : 'Unable to start location tracking');
+    onError?.(
+      error instanceof Error
+        ? error.message
+        : 'Unable to start location tracking',
+    );
     return null;
   }
 }
