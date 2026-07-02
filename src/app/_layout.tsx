@@ -1,9 +1,18 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+
+import { runMigrations } from '@/database/migrate';
 
 import '../global.css';
 
 export default function RootLayout() {
+  useEffect(() => {
+    void runMigrations().catch((error: unknown) => {
+      console.error('Failed to run database migrations', error);
+    });
+  }, []);
+
   return (
     <>
       <StatusBar style="dark" />
