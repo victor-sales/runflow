@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { runMigrations } from '@/database/migrate';
 
@@ -41,14 +42,16 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <StatusBar style="dark" />
+    <SafeAreaProvider>
+      <StatusBar backgroundColor="#F9FAFB" style="dark" translucent={false} />
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: '#F9FAFB' },
           headerShadowVisible: false,
           headerStyle: { backgroundColor: '#F9FAFB' },
           headerTitleStyle: { fontWeight: '700' },
+          statusBarBackgroundColor: '#F9FAFB',
+          statusBarTranslucent: false,
         }}
       >
         <Stack.Screen name="index" options={{ title: 'RunFlow' }} />
@@ -66,11 +69,12 @@ export default function RootLayout() {
           options={{ title: 'Criar Treino' }}
         />
         <Stack.Screen name="history/index" options={{ title: 'Historico' }} />
+        <Stack.Screen name="history/[id]" options={{ title: 'Detalhe' }} />
         <Stack.Screen
           name="settings/index"
           options={{ title: 'Configuracoes' }}
         />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }
