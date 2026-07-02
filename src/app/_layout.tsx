@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { runMigrations } from '@/database/migrate';
 
 import '../global.css';
+import '@/features/location/location-task';
 
 export default function RootLayout() {
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);

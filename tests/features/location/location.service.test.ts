@@ -5,6 +5,12 @@ const locationMock = vi.hoisted(() => ({
   Accuracy: {
     BestForNavigation: 6,
   },
+  ActivityType: {
+    Fitness: 3,
+  },
+  hasStartedLocationUpdatesAsync: vi.fn(),
+  startLocationUpdatesAsync: vi.fn(),
+  stopLocationUpdatesAsync: vi.fn(),
   watchPositionAsync: vi.fn(),
 }));
 
@@ -13,7 +19,9 @@ vi.mock('expo-location', () => locationMock);
 import {
   isValidLocationPoint,
   normalizeLocationPoint,
+  startBackgroundLocationTracking,
   startLocationTracking,
+  stopBackgroundLocationTracking,
   stopLocationTracking,
 } from '../../../src/features/location/location.service';
 
@@ -49,6 +57,9 @@ function createLocationObject(
 
 describe('location service', () => {
   beforeEach(() => {
+    locationMock.hasStartedLocationUpdatesAsync.mockReset();
+    locationMock.startLocationUpdatesAsync.mockReset();
+    locationMock.stopLocationUpdatesAsync.mockReset();
     locationMock.watchPositionAsync.mockReset();
   });
 
@@ -165,5 +176,35 @@ describe('location service', () => {
     stopLocationTracking(subscription);
 
     expect(subscription.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts background tracking when it is not already running', async () => {
+    locationMock.hasStartedLocationUpdatesAsync.mockResolvedValue(false);
+    locationMock.startLocationUpdatesAsync.mockResolvedValue(undefined);
+
+    await expect(startBackgroundLocationTracking()).resolves.toBe(true);
+
+    expect(locationMock.startLocationUpdatesAsync).toHaveBeenCalledWith(
+      'runflow-background-location',
+      expect.objectContaining({
+        accuracy: locationMock.Accuracy.BestForNavigation,
+        distanceInterval: 5,
+        foregroundService: expect.objectContaining({
+          notificationTitle: 'RunFlow em treino',
+        }),
+        timeInterval: 1000,
+      }),
+    );
+  });
+
+  it('stops background tracking when it is running', async () => {
+    locationMock.hasStartedLocationUpdatesAsync.mockResolvedValue(true);
+    locationMock.stopLocationUpdatesAsync.mockResolvedValue(undefined);
+
+    await stopBackgroundLocationTracking();
+
+    expect(locationMock.stopLocationUpdatesAsync).toHaveBeenCalledWith(
+      'runflow-background-location',
+    );
   });
 });

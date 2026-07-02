@@ -1,17 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, AppState, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Screen } from '@/components/ui/Screen';
-import { requestForegroundLocationPermission } from '@/features/location/location-permissions';
+import {
+  requestForegroundLocationPermission,
+} from '@/features/location/location-permissions';
+import type { LocationPoint } from '@/features/location/location.types';
 import {
   startLocationTracking,
   stopLocationTracking,
   type LocationTrackingSubscription,
 } from '@/features/location/location.service';
 import { WorkoutRepository } from '@/features/workout/workout.repository';
+import type { Workout, WorkoutPoint } from '@/features/workout/workout.types';
 import { useActiveWorkoutStore } from '@/store/active-workout.store';
 import { formatDistance, formatDuration, formatPace } from '@/utils/format';
 
@@ -19,6 +23,7 @@ export default function FreeRunScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTrackingStarting, setIsTrackingStarting] = useState(false);
   const isTrackingStartingRef = useRef(false);
+  const pendingPointWritesRef = useRef<Set<Promise<void>>>(new Set());
   const subscriptionRef = useRef<LocationTrackingSubscription | null>(null);
   const trackingRequestIdRef = useRef(0);
   const {
@@ -30,31 +35,69 @@ export default function FreeRunScreen() {
     errorMessage,
     gpsSignal,
     gpsSignalMessage,
-    points,
-    startedAt,
     status,
-    addPoint,
     cancelWorkout,
     finishWorkout,
     pauseWorkout,
     resetWorkout,
+    restoreActiveWorkout,
     resumeWorkout,
     setErrorMessage,
     setGpsSignal,
     startWorkout,
   } = useActiveWorkoutStore();
 
-  const stopTracking = () => {
+  const trackPointWrite = useCallback(
+    (promise: Promise<unknown>) => {
+      const trackedPromise = promise
+        .catch((error: unknown) => {
+          setErrorMessage(
+            error instanceof Error ? error.message : 'Falha ao salvar ponto GPS.',
+          );
+        })
+        .then(() => undefined);
+
+      pendingPointWritesRef.current.add(trackedPromise);
+      void trackedPromise.finally(() => {
+        pendingPointWritesRef.current.delete(trackedPromise);
+      });
+    },
+    [setErrorMessage],
+  );
+
+  const waitForPendingPointWrites = useCallback(async () => {
+    await Promise.allSettled([...pendingPointWritesRef.current]);
+  }, []);
+
+  const handleLocationPoint = useCallback((point: LocationPoint) => {
+    const state = useActiveWorkoutStore.getState();
+
+    state.addPoint(point);
+
+    if (state.status !== 'ACTIVE' || !state.workoutId) {
+      return;
+    }
+
+    trackPointWrite(
+      WorkoutRepository.addWorkoutPoint({
+        ...point,
+        segmentId: null,
+        workoutId: state.workoutId,
+      }),
+    );
+  }, [trackPointWrite]);
+
+  const stopForegroundTracking = useCallback(() => {
     trackingRequestIdRef.current += 1;
     stopLocationTracking(subscriptionRef.current);
     subscriptionRef.current = null;
-  };
+  }, []);
 
-  const startTracking = async (): Promise<boolean> => {
-    if (subscriptionRef.current) {
-      return true;
-    }
+  const stopTracking = useCallback(() => {
+    stopForegroundTracking();
+  }, [stopForegroundTracking]);
 
+  const startTracking = useCallback(async (): Promise<boolean> => {
     if (isTrackingStartingRef.current) {
       return false;
     }
@@ -64,8 +107,12 @@ export default function FreeRunScreen() {
     const requestId = trackingRequestIdRef.current;
 
     try {
+      if (subscriptionRef.current) {
+        return true;
+      }
+
       const subscription = await startLocationTracking(
-        addPoint,
+        handleLocationPoint,
         setErrorMessage,
         (signal) => setGpsSignal(signal.status, signal.message),
       );
@@ -82,7 +129,41 @@ export default function FreeRunScreen() {
       isTrackingStartingRef.current = false;
       setIsTrackingStarting(false);
     }
-  };
+  }, [handleLocationPoint, setErrorMessage, setGpsSignal]);
+
+  const restorePersistedWorkout = useCallback(
+    async (workout: Workout) => {
+      const persistedPoints = await WorkoutRepository.getWorkoutPoints(
+        workout.id,
+      );
+
+      restoreActiveWorkout({
+        accumulatedElapsedSeconds: workout.totalDuration,
+        activeStartedAt:
+          workout.status === 'ACTIVE' ? workout.updatedAt : null,
+        endedAt: workout.endedAt,
+        points: persistedPoints.map(workoutPointToLocationPoint),
+        startedAt: workout.startedAt,
+        status: workout.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED',
+        workoutId: workout.id,
+      });
+    },
+    [restoreActiveWorkout],
+  );
+
+  const syncOpenWorkout = useCallback(async () => {
+    const openWorkout = await WorkoutRepository.getOpenWorkout();
+
+    if (!openWorkout) {
+      return;
+    }
+
+    await restorePersistedWorkout(openWorkout);
+
+    if (openWorkout.status === 'ACTIVE') {
+      void startTracking();
+    }
+  }, [restorePersistedWorkout, startTracking]);
 
   const handleStart = async () => {
     if (isTrackingStartingRef.current || subscriptionRef.current) {
@@ -91,75 +172,131 @@ export default function FreeRunScreen() {
 
     setErrorMessage(null);
 
-    const hasPermission = await requestForegroundLocationPermission();
+    const hasForegroundPermission = await requestForegroundLocationPermission();
 
-    if (!hasPermission) {
+    if (!hasForegroundPermission) {
       setErrorMessage('Permissao de localizacao negada.');
       return;
     }
 
-    startWorkout();
+    const startedAtValue = new Date().toISOString();
+    const workout = await WorkoutRepository.createWorkout({
+      startedAt: startedAtValue,
+      status: 'ACTIVE',
+      type: 'FREE_RUN',
+    });
+
+    startWorkout(startedAtValue, workout.id);
 
     const started = await startTracking();
 
     if (!started) {
+      await WorkoutRepository.cancelWorkout(workout.id);
       cancelWorkout();
     }
   };
 
-  const handlePause = () => {
-    stopTracking();
-    pauseWorkout();
+  const handlePause = async () => {
+    const state = useActiveWorkoutStore.getState();
+
+    if (!state.workoutId) {
+      return;
+    }
+
+    const pausedAt = new Date().toISOString();
+
+    await stopTracking();
+    await waitForPendingPointWrites();
+    pauseWorkout(pausedAt);
+
+    const pausedState = useActiveWorkoutStore.getState();
+
+    await WorkoutRepository.updateWorkout(state.workoutId, {
+      avgPace: pausedState.averagePace,
+      status: 'PAUSED',
+      totalDistance: pausedState.distanceMeters,
+      totalDuration: pausedState.elapsedSeconds,
+    });
   };
 
   const handleResume = async () => {
-    if (isTrackingStartingRef.current || subscriptionRef.current) {
+    const state = useActiveWorkoutStore.getState();
+
+    if (
+      isTrackingStartingRef.current ||
+      subscriptionRef.current ||
+      !state.workoutId
+    ) {
       return;
     }
 
     setErrorMessage(null);
 
+    const resumedAt = new Date().toISOString();
     const started = await startTracking();
 
     if (started) {
-      resumeWorkout();
+      resumeWorkout(resumedAt);
+      const resumedState = useActiveWorkoutStore.getState();
+
+      await WorkoutRepository.updateWorkout(state.workoutId, {
+        avgPace: resumedState.averagePace,
+        status: 'ACTIVE',
+        totalDistance: resumedState.distanceMeters,
+        totalDuration: resumedState.elapsedSeconds,
+      });
     }
   };
 
-  const handleCancel = () => {
-    stopTracking();
+  const handleCancel = async () => {
+    const state = useActiveWorkoutStore.getState();
+
+    await stopTracking();
+
+    if (state.workoutId) {
+      await WorkoutRepository.cancelWorkout(state.workoutId);
+    }
+
     cancelWorkout();
   };
 
   const handleFinish = async () => {
-    if (!startedAt || isSaving) {
+    const state = useActiveWorkoutStore.getState();
+
+    if (!state.startedAt || !state.workoutId || isSaving) {
       return;
     }
 
     setIsSaving(true);
-    stopTracking();
     const finishedAt = new Date().toISOString();
 
-    if (status === 'ACTIVE') {
-      pauseWorkout();
-    }
-
     try {
-      await WorkoutRepository.createCompletedWorkoutWithPoints(
-        {
-          avgPace: averagePace,
-          endedAt: finishedAt,
-          startedAt,
-          totalDistance: distanceMeters,
-          totalDuration: elapsedSeconds,
-          type: 'FREE_RUN',
-        },
-        points.map((point) => ({
-          ...point,
-          segmentId: null,
-        })),
+      await stopTracking();
+      await waitForPendingPointWrites();
+
+      const persistedPoints = await WorkoutRepository.getWorkoutPoints(
+        state.workoutId,
       );
+
+      restoreActiveWorkout({
+        accumulatedElapsedSeconds: state.accumulatedElapsedSeconds,
+        activeStartedAt: state.status === 'ACTIVE' ? state.activeStartedAt : null,
+        endedAt: state.endedAt,
+        points: persistedPoints.map(workoutPointToLocationPoint),
+        startedAt: state.startedAt,
+        status: state.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED',
+        workoutId: state.workoutId,
+      });
       finishWorkout(finishedAt);
+
+      const finishedState = useActiveWorkoutStore.getState();
+
+      await WorkoutRepository.finishWorkout(state.workoutId, {
+        avgPace: finishedState.averagePace,
+        endedAt: finishedAt,
+        totalDistance: finishedState.distanceMeters,
+        totalDuration: finishedState.elapsedSeconds,
+      });
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Falha ao salvar treino.',
@@ -170,19 +307,38 @@ export default function FreeRunScreen() {
   };
 
   useEffect(() => {
+    void syncOpenWorkout();
+  }, [syncOpenWorkout]);
+
+  useEffect(() => {
     if (status !== 'ACTIVE') {
       return;
     }
 
     const intervalId = setInterval(() => {
-      const state = useActiveWorkoutStore.getState();
-      state.updateMetrics(state.elapsedSeconds + 1);
+      useActiveWorkoutStore.getState().refreshElapsedSeconds();
     }, 1000);
 
     return () => clearInterval(intervalId);
   }, [status]);
 
-  useEffect(() => stopTracking, []);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        useActiveWorkoutStore.getState().refreshElapsedSeconds();
+        void syncOpenWorkout();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [syncOpenWorkout]);
+
+  useEffect(
+    () => () => {
+      stopForegroundTracking();
+    },
+    [stopForegroundTracking],
+  );
 
   const canStart = status === 'IDLE' || status === 'CANCELED';
   const canFinish = status === 'ACTIVE' || status === 'PAUSED';
@@ -282,6 +438,17 @@ export default function FreeRunScreen() {
   );
 }
 
+function workoutPointToLocationPoint(point: WorkoutPoint): LocationPoint {
+  return {
+    accuracy: point.accuracy,
+    altitude: point.altitude,
+    latitude: point.latitude,
+    longitude: point.longitude,
+    speed: point.speed,
+    timestamp: point.timestamp,
+  };
+}
+
 function getStatusLabel(status: string, endedAt: string | null): string {
   if (status === 'ACTIVE') {
     return 'Capturando GPS em foreground.';
@@ -299,7 +466,7 @@ function getStatusLabel(status: string, endedAt: string | null): string {
     return 'Treino cancelado.';
   }
 
-  return 'Inicie para capturar GPS e acompanhar metricas.';
+    return 'Inicie para capturar GPS e acompanhar metricas.';
 }
 
 function getGpsSignalLabel(signal: string): string {
@@ -315,15 +482,15 @@ function getGpsSignalLabel(signal: string): string {
 }
 
 const styles = StyleSheet.create({
+  actions: {
+    gap: 12,
+  },
   header: {
     gap: 10,
   },
   metrics: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-  },
-  actions: {
     gap: 12,
   },
 });
