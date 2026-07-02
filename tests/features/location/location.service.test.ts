@@ -133,6 +133,32 @@ describe('location service', () => {
     );
   });
 
+  it('reports gps signal even when the point is discarded', async () => {
+    const onPoint = vi.fn();
+    const onSignal = vi.fn();
+    const subscription: LocationSubscription = { remove: vi.fn() };
+
+    locationMock.watchPositionAsync.mockImplementation(
+      async (
+        _options: unknown,
+        callback: (location: LocationObject) => void,
+      ): Promise<LocationSubscription> => {
+        callback(createLocationObject({ coords: { accuracy: 31 } }));
+        return subscription;
+      },
+    );
+
+    await startLocationTracking(onPoint, undefined, onSignal);
+
+    expect(onPoint).not.toHaveBeenCalled();
+    expect(onSignal).toHaveBeenCalledWith({
+      message:
+        'Sinal de GPS fraco. Desative o modo economia de bateria ou mantenha o app aberto para melhorar a precisao.',
+      quality: 'invalid',
+      status: 'lost',
+    });
+  });
+
   it('removes the active tracking subscription', () => {
     const subscription: LocationSubscription = { remove: vi.fn() };
 

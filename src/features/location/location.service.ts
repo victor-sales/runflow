@@ -1,5 +1,11 @@
 import * as Location from 'expo-location';
 
+import {
+  getLocationSignalQuality,
+  getLocationSignalReason,
+  type GpsSignalStatus,
+  type LocationSignalQuality,
+} from './location-quality';
 import type { LocationPoint } from './location.types';
 
 const MAX_LOCATION_ACCURACY_METERS = 30;
@@ -7,6 +13,12 @@ const MAX_LOCATION_ACCURACY_METERS = 30;
 export type LocationPointHandler = (point: LocationPoint) => void;
 export type LocationTrackingErrorHandler = (message: string) => void;
 export type LocationTrackingSubscription = Location.LocationSubscription;
+export type LocationSignal = {
+  message: string | null;
+  quality: LocationSignalQuality;
+  status: GpsSignalStatus;
+};
+export type LocationSignalHandler = (signal: LocationSignal) => void;
 
 function isFiniteNumber(value: number): boolean {
   return Number.isFinite(value);
@@ -18,6 +30,36 @@ function isValidTimestamp(timestamp: string): boolean {
 
 function normalizeNullableNumber(value: number | null): number | null {
   return value !== null && isFiniteNumber(value) ? value : null;
+}
+
+function getLocationSignal(
+  point: LocationPoint,
+  previousPoint: LocationPoint | null,
+): LocationSignal {
+  const quality = getLocationSignalQuality(point, previousPoint);
+
+  return {
+    message: getLocationSignalReason(point, previousPoint),
+    quality,
+    status: quality === 'invalid' ? 'lost' : quality,
+  };
+}
+
+function locationObjectToPoint(
+  location: Location.LocationObject,
+): LocationPoint | null {
+  if (!Number.isFinite(location.timestamp)) {
+    return null;
+  }
+
+  return {
+    latitude: location.coords.latitude,
+    longitude: location.coords.longitude,
+    accuracy: normalizeNullableNumber(location.coords.accuracy),
+    altitude: normalizeNullableNumber(location.coords.altitude),
+    speed: normalizeNullableNumber(location.coords.speed),
+    timestamp: new Date(location.timestamp).toISOString(),
+  };
 }
 
 export function isValidLocationPoint(point: LocationPoint): boolean {
@@ -52,26 +94,18 @@ export function isValidLocationPoint(point: LocationPoint): boolean {
 export function normalizeLocationPoint(
   location: Location.LocationObject,
 ): LocationPoint | null {
-  if (!Number.isFinite(location.timestamp)) {
-    return null;
-  }
+  const point = locationObjectToPoint(location);
 
-  const point: LocationPoint = {
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude,
-    accuracy: normalizeNullableNumber(location.coords.accuracy),
-    altitude: normalizeNullableNumber(location.coords.altitude),
-    speed: normalizeNullableNumber(location.coords.speed),
-    timestamp: new Date(location.timestamp).toISOString(),
-  };
-
-  return isValidLocationPoint(point) ? point : null;
+  return point && isValidLocationPoint(point) ? point : null;
 }
 
 export async function startLocationTracking(
   onPoint: LocationPointHandler,
   onError?: LocationTrackingErrorHandler,
+  onSignalChange?: LocationSignalHandler,
 ): Promise<LocationTrackingSubscription | null> {
+  let previousPoint: LocationPoint | null = null;
+
   try {
     return await Location.watchPositionAsync(
       {
@@ -80,10 +114,22 @@ export async function startLocationTracking(
         timeInterval: 1000,
       },
       (location) => {
-        const point = normalizeLocationPoint(location);
+        const point = locationObjectToPoint(location);
 
-        if (point) {
+        if (!point) {
+          onSignalChange?.({
+            message: 'Ponto GPS invalido.',
+            quality: 'invalid',
+            status: 'lost',
+          });
+          return;
+        }
+
+        onSignalChange?.(getLocationSignal(point, previousPoint));
+
+        if (isValidLocationPoint(point)) {
           onPoint(point);
+          previousPoint = point;
         }
       },
       onError,
