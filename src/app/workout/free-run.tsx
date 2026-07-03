@@ -49,7 +49,6 @@ export default function FreeRunScreen() {
     finishWorkout,
     pauseWorkout,
     points,
-    resetWorkout,
     restoreActiveWorkout,
     resumeWorkout,
     setErrorMessage,
@@ -360,7 +359,8 @@ export default function FreeRunScreen() {
     [stopForegroundTracking],
   );
 
-  const canStart = status === 'IDLE' || status === 'CANCELED';
+  const canStart =
+    status === 'IDLE' || status === 'CANCELED' || status === 'COMPLETED';
   const canFinish = status === 'ACTIVE' || status === 'PAUSED';
 
   return (
@@ -445,14 +445,6 @@ export default function FreeRunScreen() {
               ])
             }
             variant="ghost"
-          />
-        ) : null}
-        {status === 'COMPLETED' ? (
-          <Button
-            fullWidth
-            label="Novo treino"
-            onPress={resetWorkout}
-            variant="secondary"
           />
         ) : null}
       </View>

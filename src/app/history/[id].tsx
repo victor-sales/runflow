@@ -134,7 +134,11 @@ export default function WorkoutHistoryDetailsScreen() {
 
           <WorkoutMap
             points={details.points}
-            snapshotUri={details.workout.routeSnapshotUri}
+            snapshotUri={
+              details.points.length === 0
+                ? details.workout.routeSnapshotUri
+                : null
+            }
           />
 
           <Card>
