@@ -29,6 +29,7 @@ import {
   type IntervalSegmentRuntime,
 } from '@/features/interval-training/interval-workout';
 import { requestForegroundLocationPermission } from '@/features/location/location-permissions';
+import type { GpsSignalStatus } from '@/features/location/location-quality';
 import {
   startLocationTracking,
   stopLocationTracking,
@@ -732,7 +733,7 @@ export default function ActiveIntervalWorkoutScreen() {
   );
 }
 
-function getGpsSignalLabel(signal: string): string {
+function getGpsSignalLabel(signal: GpsSignalStatus): string {
   if (signal === 'good') {
     return 'bom';
   }

@@ -1,12 +1,12 @@
 import { calculateDistanceBetweenPoints } from '@/utils/distance';
 
+import { MAX_LOCATION_ACCURACY_METERS } from './location.constants';
 import type { LocationPoint } from './location.types';
 
 export type LocationSignalQuality = 'good' | 'weak' | 'invalid';
 export type GpsSignalStatus = 'good' | 'weak' | 'lost';
 
 const MAX_GOOD_ACCURACY_METERS = 15;
-const MAX_ACCEPTED_ACCURACY_METERS = 30;
 const MAX_SECONDS_BETWEEN_POINTS = 10;
 const MAX_REALISTIC_RUNNING_SPEED_METERS_PER_SECOND = 8;
 const WEAK_GPS_SIGNAL_MESSAGE =
@@ -88,7 +88,7 @@ export function getLocationSignalQuality(
 
   if (
     point.accuracy !== null &&
-    point.accuracy > MAX_ACCEPTED_ACCURACY_METERS
+    point.accuracy > MAX_LOCATION_ACCURACY_METERS
   ) {
     return 'invalid';
   }
@@ -126,4 +126,11 @@ export function isWeakGpsSignal(
   previousPoint: LocationPoint | null = null,
 ): boolean {
   return getLocationSignalQuality(point, previousPoint) === 'weak';
+}
+
+export function isAcceptedLocationPoint(
+  point: LocationPoint,
+  previousPoint: LocationPoint | null = null,
+): boolean {
+  return getLocationSignalQuality(point, previousPoint) !== 'invalid';
 }

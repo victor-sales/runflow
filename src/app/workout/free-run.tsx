@@ -11,6 +11,7 @@ import {
   type WorkoutMapHandle,
 } from '@/components/workout/WorkoutMap';
 import { requestForegroundLocationPermission } from '@/features/location/location-permissions';
+import type { GpsSignalStatus } from '@/features/location/location-quality';
 import type { LocationPoint } from '@/features/location/location.types';
 import {
   startLocationTracking,
@@ -20,7 +21,10 @@ import {
 import { saveRouteSnapshot } from '@/features/workout/route-snapshot.service';
 import { WorkoutRepository } from '@/features/workout/workout.repository';
 import type { Workout, WorkoutPoint } from '@/features/workout/workout.types';
-import { useActiveWorkoutStore } from '@/store/active-workout.store';
+import {
+  useActiveWorkoutStore,
+  type ActiveWorkoutStatus,
+} from '@/store/active-workout.store';
 import { formatDistance, formatDuration, formatPace } from '@/utils/format';
 
 export default function FreeRunScreen() {
@@ -467,7 +471,10 @@ function workoutPointToLocationPoint(point: WorkoutPoint): LocationPoint {
   };
 }
 
-function getStatusLabel(status: string, endedAt: string | null): string {
+function getStatusLabel(
+  status: ActiveWorkoutStatus,
+  endedAt: string | null,
+): string {
   if (status === 'ACTIVE') {
     return 'Capturando GPS em foreground.';
   }
@@ -487,7 +494,7 @@ function getStatusLabel(status: string, endedAt: string | null): string {
   return 'Inicie para capturar GPS e acompanhar metricas.';
 }
 
-function getGpsSignalLabel(signal: string): string {
+function getGpsSignalLabel(signal: GpsSignalStatus): string {
   if (signal === 'good') {
     return 'bom';
   }
