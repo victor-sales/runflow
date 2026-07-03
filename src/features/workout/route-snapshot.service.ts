@@ -2,10 +2,10 @@ import { Directory, File, Paths } from 'expo-file-system';
 
 const ROUTE_SNAPSHOT_DIRECTORY = 'route-snapshots';
 
-export function saveRouteSnapshot(
+export async function saveRouteSnapshot(
   workoutId: string,
   snapshotUri: string | null,
-): string | null {
+): Promise<string | null> {
   if (!snapshotUri) {
     return null;
   }
@@ -20,7 +20,7 @@ export function saveRouteSnapshot(
     destination.delete();
   }
 
-  source.copy(destination);
+  await source.copy(destination);
 
   return destination.uri;
 }
