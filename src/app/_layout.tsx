@@ -73,6 +73,10 @@ export default function RootLayout() {
           name="workout/interval/active"
           options={{ title: 'Treino Intervalado' }}
         />
+        <Stack.Screen
+          name="workout/summary/[id]"
+          options={{ title: 'Resumo' }}
+        />
         <Stack.Screen name="history/index" options={{ title: 'Historico' }} />
         <Stack.Screen name="history/[id]" options={{ title: 'Detalhe' }} />
         <Stack.Screen

@@ -24,6 +24,7 @@ type WorkoutRow = {
   total_distance: number;
   total_duration: number;
   avg_pace: number | null;
+  route_snapshot_uri?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -67,12 +68,18 @@ export type CreateWorkoutInput = {
   totalDistance?: number;
   totalDuration?: number;
   avgPace?: number | null;
+  routeSnapshotUri?: string | null;
 };
 
 export type UpdateWorkoutInput = Partial<
   Pick<
     Workout,
-    'status' | 'endedAt' | 'totalDistance' | 'totalDuration' | 'avgPace'
+    | 'status'
+    | 'endedAt'
+    | 'totalDistance'
+    | 'totalDuration'
+    | 'avgPace'
+    | 'routeSnapshotUri'
   >
 >;
 
@@ -119,6 +126,7 @@ export function mapWorkoutRow(row: WorkoutRow): Workout {
     totalDistance: row.total_distance,
     totalDuration: row.total_duration,
     avgPace: row.avg_pace,
+    routeSnapshotUri: row.route_snapshot_uri ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -168,6 +176,7 @@ function buildWorkout(input: CreateWorkoutInput, now: string): Workout {
     totalDistance: input.totalDistance ?? 0,
     totalDuration: input.totalDuration ?? 0,
     avgPace: input.avgPace ?? null,
+    routeSnapshotUri: input.routeSnapshotUri ?? null,
     createdAt: now,
     updatedAt: now,
   };
@@ -179,8 +188,8 @@ async function insertWorkout(
 ): Promise<void> {
   await database.runAsync(
     `INSERT INTO ${TABLES.workouts}
-      (id, type, status, started_at, ended_at, total_distance, total_duration, avg_pace, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      (id, type, status, started_at, ended_at, total_distance, total_duration, avg_pace, route_snapshot_uri, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     workout.id,
     workout.type,
     workout.status,
@@ -189,6 +198,7 @@ async function insertWorkout(
     workout.totalDistance,
     workout.totalDuration,
     workout.avgPace,
+    workout.routeSnapshotUri,
     workout.createdAt,
     workout.updatedAt,
   );
@@ -338,13 +348,14 @@ async function updateWorkout(
   await withDatabase((database) =>
     database.runAsync(
       `UPDATE ${TABLES.workouts}
-       SET status = ?, ended_at = ?, total_distance = ?, total_duration = ?, avg_pace = ?, updated_at = ?
+       SET status = ?, ended_at = ?, total_distance = ?, total_duration = ?, avg_pace = ?, route_snapshot_uri = ?, updated_at = ?
        WHERE id = ?;`,
       updated.status,
       updated.endedAt,
       updated.totalDistance,
       updated.totalDuration,
       updated.avgPace,
+      updated.routeSnapshotUri,
       updated.updatedAt,
       id,
     ),

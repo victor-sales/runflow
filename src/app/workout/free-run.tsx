@@ -1,26 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import { Alert, AppState, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Screen } from '@/components/ui/Screen';
+import {
+  WorkoutMap,
+  type WorkoutMapHandle,
+} from '@/components/workout/WorkoutMap';
 import { requestForegroundLocationPermission } from '@/features/location/location-permissions';
+import type { GpsSignalStatus } from '@/features/location/location-quality';
 import type { LocationPoint } from '@/features/location/location.types';
 import {
   startLocationTracking,
   stopLocationTracking,
   type LocationTrackingSubscription,
 } from '@/features/location/location.service';
+import { saveRouteSnapshot } from '@/features/workout/route-snapshot.service';
 import { WorkoutRepository } from '@/features/workout/workout.repository';
 import type { Workout, WorkoutPoint } from '@/features/workout/workout.types';
-import { useActiveWorkoutStore } from '@/store/active-workout.store';
+import {
+  useActiveWorkoutStore,
+  type ActiveWorkoutStatus,
+} from '@/store/active-workout.store';
 import { formatDistance, formatDuration, formatPace } from '@/utils/format';
 
 export default function FreeRunScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTrackingStarting, setIsTrackingStarting] = useState(false);
   const isTrackingStartingRef = useRef(false);
+  const mapRef = useRef<WorkoutMapHandle | null>(null);
   const pendingPointWritesRef = useRef<Set<Promise<void>>>(new Set());
   const subscriptionRef = useRef<LocationTrackingSubscription | null>(null);
   const trackingRequestIdRef = useRef(0);
@@ -37,7 +48,7 @@ export default function FreeRunScreen() {
     cancelWorkout,
     finishWorkout,
     pauseWorkout,
-    resetWorkout,
+    points,
     restoreActiveWorkout,
     resumeWorkout,
     setErrorMessage,
@@ -68,6 +79,19 @@ export default function FreeRunScreen() {
   const waitForPendingPointWrites = useCallback(async () => {
     await Promise.allSettled([...pendingPointWritesRef.current]);
   }, []);
+
+  const captureRouteSnapshot = useCallback(
+    async (workoutId: string): Promise<string | null> => {
+      try {
+        const snapshotUri = (await mapRef.current?.takeSnapshot()) ?? null;
+
+        return saveRouteSnapshot(workoutId, snapshotUri);
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
 
   const handleLocationPoint = useCallback(
     (point: LocationPoint) => {
@@ -279,12 +303,18 @@ export default function FreeRunScreen() {
       finishWorkout(finishedAt);
 
       const finishedState = useActiveWorkoutStore.getState();
+      const routeSnapshotUri = await captureRouteSnapshot(state.workoutId);
 
       await WorkoutRepository.finishWorkout(state.workoutId, {
         avgPace: finishedState.averagePace,
         endedAt: finishedAt,
+        routeSnapshotUri,
         totalDistance: finishedState.distanceMeters,
         totalDuration: finishedState.elapsedSeconds,
+      });
+      router.replace({
+        params: { id: state.workoutId },
+        pathname: '/workout/summary/[id]',
       });
     } catch (error) {
       setErrorMessage(
@@ -329,7 +359,8 @@ export default function FreeRunScreen() {
     [stopForegroundTracking],
   );
 
-  const canStart = status === 'IDLE' || status === 'CANCELED';
+  const canStart =
+    status === 'IDLE' || status === 'CANCELED' || status === 'COMPLETED';
   const canFinish = status === 'ACTIVE' || status === 'PAUSED';
 
   return (
@@ -350,6 +381,8 @@ export default function FreeRunScreen() {
         <MetricCard label="Pace atual" value={formatPace(currentPace)} />
         <MetricCard label="Pace medio" value={formatPace(averagePace)} />
       </View>
+
+      <WorkoutMap points={points} ref={mapRef} />
 
       {errorMessage ? (
         <AppText color="secondary" variant="caption">
@@ -414,14 +447,6 @@ export default function FreeRunScreen() {
             variant="ghost"
           />
         ) : null}
-        {status === 'COMPLETED' ? (
-          <Button
-            fullWidth
-            label="Novo treino"
-            onPress={resetWorkout}
-            variant="secondary"
-          />
-        ) : null}
       </View>
     </Screen>
   );
@@ -438,7 +463,10 @@ function workoutPointToLocationPoint(point: WorkoutPoint): LocationPoint {
   };
 }
 
-function getStatusLabel(status: string, endedAt: string | null): string {
+function getStatusLabel(
+  status: ActiveWorkoutStatus,
+  endedAt: string | null,
+): string {
   if (status === 'ACTIVE') {
     return 'Capturando GPS em foreground.';
   }
@@ -458,7 +486,7 @@ function getStatusLabel(status: string, endedAt: string | null): string {
   return 'Inicie para capturar GPS e acompanhar metricas.';
 }
 
-function getGpsSignalLabel(signal: string): string {
+function getGpsSignalLabel(signal: GpsSignalStatus): string {
   if (signal === 'good') {
     return 'bom';
   }

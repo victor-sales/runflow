@@ -40,6 +40,7 @@ describe('workout repository mappers', () => {
       createdAt: '2026-07-02T12:00:00.000Z',
       endedAt: '2026-07-02T12:30:00.000Z',
       id: 'workout_1',
+      routeSnapshotUri: null,
       startedAt: '2026-07-02T12:00:00.000Z',
       status: 'COMPLETED',
       totalDistance: 5000,

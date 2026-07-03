@@ -115,9 +115,6 @@ export default function IntervalWorkoutListScreen() {
           <AppText color="secondary">
             Crie seu primeiro template de treino intervalado.
           </AppText>
-          <Link asChild href={createHref}>
-            <Button label="Criar treino intervalado" variant="secondary" />
-          </Link>
         </Card>
       ) : null}
 

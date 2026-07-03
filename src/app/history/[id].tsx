@@ -6,6 +6,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
+import { WorkoutMap } from '@/components/workout/WorkoutMap';
 import { WorkoutRepository } from '@/features/workout/workout.repository';
 import type {
   Workout,
@@ -130,6 +131,15 @@ export default function WorkoutHistoryDetailsScreen() {
               />
             </View>
           </Card>
+
+          <WorkoutMap
+            points={details.points}
+            snapshotUri={
+              details.points.length === 0
+                ? details.workout.routeSnapshotUri
+                : null
+            }
+          />
 
           <Card>
             <AppText variant="subtitle">Segmentos</AppText>

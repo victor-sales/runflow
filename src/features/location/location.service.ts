@@ -1,12 +1,10 @@
 import * as Location from 'expo-location';
 
-import {
-  BACKGROUND_LOCATION_TASK_NAME,
-  MAX_LOCATION_ACCURACY_METERS,
-} from './location.constants';
+import { BACKGROUND_LOCATION_TASK_NAME } from './location.constants';
 import {
   getLocationSignalQuality,
   getLocationSignalReason,
+  isAcceptedLocationPoint,
   type GpsSignalStatus,
   type LocationSignalQuality,
 } from './location-quality';
@@ -24,10 +22,6 @@ export type LocationSignalHandler = (signal: LocationSignal) => void;
 
 function isFiniteNumber(value: number): boolean {
   return Number.isFinite(value);
-}
-
-function isValidTimestamp(timestamp: string): boolean {
-  return timestamp.length > 0 && Number.isFinite(Date.parse(timestamp));
 }
 
 function normalizeNullableNumber(value: number | null): number | null {
@@ -65,32 +59,7 @@ function locationObjectToPoint(
 }
 
 export function isValidLocationPoint(point: LocationPoint): boolean {
-  const hasValidCoordinates =
-    isFiniteNumber(point.latitude) &&
-    point.latitude >= -90 &&
-    point.latitude <= 90 &&
-    isFiniteNumber(point.longitude) &&
-    point.longitude >= -180 &&
-    point.longitude <= 180;
-
-  const hasValidAccuracy =
-    point.accuracy === null ||
-    (isFiniteNumber(point.accuracy) &&
-      point.accuracy >= 0 &&
-      point.accuracy <= MAX_LOCATION_ACCURACY_METERS);
-
-  const hasValidAltitude =
-    point.altitude === null || isFiniteNumber(point.altitude);
-  const hasValidSpeed =
-    point.speed === null || (isFiniteNumber(point.speed) && point.speed >= 0);
-
-  return (
-    hasValidCoordinates &&
-    hasValidAccuracy &&
-    hasValidAltitude &&
-    hasValidSpeed &&
-    isValidTimestamp(point.timestamp)
-  );
+  return isAcceptedLocationPoint(point);
 }
 
 export function normalizeLocationPoint(

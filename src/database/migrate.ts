@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { withDatabase } from '@/database/db';
 import { initialSchemaMigration } from '@/database/migrations/001_initial_schema';
+import { addWorkoutRouteSnapshotUriMigration } from '@/database/migrations/002_add_workout_route_snapshot_uri';
 import { TABLES } from '@/database/schema';
 
 export type Migration = {
@@ -14,7 +15,10 @@ type AppliedMigration = {
   id: number;
 };
 
-const migrations: Migration[] = [initialSchemaMigration];
+const migrations: Migration[] = [
+  initialSchemaMigration,
+  addWorkoutRouteSnapshotUriMigration,
+];
 
 export async function runMigrations(): Promise<void> {
   await withDatabase(async (database) => {
