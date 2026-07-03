@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Pressable,
@@ -80,8 +80,8 @@ export default function CreateIntervalWorkoutScreen() {
   const shotTargetType = watch('shotTargetType');
   const restTargetType = watch('restTargetType');
 
-  const onSubmit = async (values: IntervalTemplateFormValues) => {
-    await IntervalTemplateRepository.createIntervalTemplate({
+  const saveTemplate = async (values: IntervalTemplateFormValues) =>
+    IntervalTemplateRepository.createIntervalTemplate({
       cooldownDuration: minutesToSeconds(values.cooldownMinutes),
       name: values.name.trim(),
       restTargetType: values.restTargetType,
@@ -98,7 +98,16 @@ export default function CreateIntervalWorkoutScreen() {
       warmupDuration: minutesToSeconds(values.warmupMinutes),
     });
 
+  const onSubmit = async (values: IntervalTemplateFormValues) => {
+    await saveTemplate(values);
+
     router.replace('/workout/interval');
+  };
+
+  const onSubmitAndStart = async (values: IntervalTemplateFormValues) => {
+    const template = await saveTemplate(values);
+
+    router.replace(getActiveHref(template.id));
   };
 
   return (
@@ -180,6 +189,14 @@ export default function CreateIntervalWorkoutScreen() {
           fullWidth
           label={isSubmitting ? 'Salvando...' : 'Salvar treino'}
           onPress={handleSubmit(onSubmit)}
+        />
+
+        <Button
+          disabled={isSubmitting}
+          fullWidth
+          label={isSubmitting ? 'Salvando...' : 'Salvar e iniciar'}
+          onPress={handleSubmit(onSubmitAndStart)}
+          variant="secondary"
         />
       </Card>
     </Screen>
@@ -275,6 +292,12 @@ function targetValueToStorage(type: TargetType, value: string): number {
   const numericValue = Number(value);
 
   return type === 'TIME' ? minutesToSeconds(value) : Math.round(numericValue);
+}
+
+function getActiveHref(templateId: string): Href {
+  return `/workout/interval/active?templateId=${encodeURIComponent(
+    templateId,
+  )}` as Href;
 }
 
 const styles = StyleSheet.create({
