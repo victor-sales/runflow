@@ -90,6 +90,13 @@ export type CreateWorkoutSegmentInput = Omit<
   updatedAt?: string;
 };
 
+export type UpdateWorkoutSegmentInput = Partial<
+  Pick<
+    WorkoutSegment,
+    'actualDistance' | 'actualDuration' | 'avgPace' | 'endedAt' | 'startedAt'
+  >
+>;
+
 export type CreateCompletedWorkoutWithPointsInput = Omit<
   CreateWorkoutInput,
   'status'
@@ -525,6 +532,53 @@ async function getWorkoutSegments(
   });
 }
 
+async function getWorkoutSegmentById(
+  id: string,
+): Promise<WorkoutSegment | null> {
+  return withDatabase(async (database) => {
+    const row = await database.getFirstAsync<WorkoutSegmentRow>(
+      `SELECT * FROM ${TABLES.workoutSegments} WHERE id = ?;`,
+      id,
+    );
+
+    return row ? mapWorkoutSegmentRow(row) : null;
+  });
+}
+
+async function updateWorkoutSegment(
+  id: string,
+  input: UpdateWorkoutSegmentInput,
+): Promise<WorkoutSegment | null> {
+  const current = await getWorkoutSegmentById(id);
+
+  if (!current) {
+    return null;
+  }
+
+  const updated: WorkoutSegment = {
+    ...current,
+    ...input,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await withDatabase((database) =>
+    database.runAsync(
+      `UPDATE ${TABLES.workoutSegments}
+       SET actual_distance = ?, actual_duration = ?, avg_pace = ?, started_at = ?, ended_at = ?, updated_at = ?
+       WHERE id = ?;`,
+      updated.actualDistance,
+      updated.actualDuration,
+      updated.avgPace,
+      updated.startedAt,
+      updated.endedAt,
+      updated.updatedAt,
+      id,
+    ),
+  );
+
+  return updated;
+}
+
 export const WorkoutRepository = {
   addWorkoutPoint,
   addWorkoutPoints,
@@ -540,5 +594,6 @@ export const WorkoutRepository = {
   getWorkoutPoints,
   getWorkoutSegments,
   listCompletedWorkouts,
+  updateWorkoutSegment,
   updateWorkout,
 };

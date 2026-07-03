@@ -194,4 +194,59 @@ describe('workout repository mappers', () => {
 
     expect(database.runAsync).not.toHaveBeenCalled();
   });
+
+  it('updates workout segment summary', async () => {
+    const database = {
+      getFirstAsync: vi.fn().mockResolvedValue({
+        actual_distance: 0,
+        actual_duration: 0,
+        avg_pace: null,
+        created_at: '2026-07-02T12:00:00.000Z',
+        ended_at: null,
+        id: 'segment_1',
+        order_index: 0,
+        repetition: 1,
+        started_at: '2026-07-02T12:00:00.000Z',
+        target_type: 'DISTANCE',
+        target_value: 400,
+        type: 'RUN',
+        updated_at: '2026-07-02T12:00:00.000Z',
+        workout_id: 'workout_1',
+      }),
+      runAsync: vi.fn().mockResolvedValue({
+        changes: 1,
+        lastInsertRowId: 1,
+      }),
+    } as unknown as DatabaseArgument;
+
+    vi.mocked(withDatabase).mockImplementation(async (callback) =>
+      callback(database),
+    );
+
+    await expect(
+      WorkoutRepository.updateWorkoutSegment('segment_1', {
+        actualDistance: 400,
+        actualDuration: 100,
+        avgPace: 250,
+        endedAt: '2026-07-02T12:01:40.000Z',
+      }),
+    ).resolves.toMatchObject({
+      actualDistance: 400,
+      actualDuration: 100,
+      avgPace: 250,
+      endedAt: '2026-07-02T12:01:40.000Z',
+      id: 'segment_1',
+    });
+
+    expect(database.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE workout_segments'),
+      400,
+      100,
+      250,
+      '2026-07-02T12:00:00.000Z',
+      '2026-07-02T12:01:40.000Z',
+      expect.any(String),
+      'segment_1',
+    );
+  });
 });

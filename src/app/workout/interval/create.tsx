@@ -106,7 +106,7 @@ export default function CreateIntervalWorkoutScreen() {
       <View style={styles.header}>
         <AppText variant="title">Criar treino</AppText>
         <AppText color="secondary">
-          Configure um modelo para usar na execucao guiada futura.
+          Configure um modelo para usar na execucao guiada.
         </AppText>
       </View>
 

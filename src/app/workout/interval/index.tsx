@@ -13,6 +13,9 @@ import { formatDistance, formatDuration } from '@/utils/format';
 
 const createHref = '/workout/interval/create' as Href;
 
+const getActiveHref = (templateId: string): Href =>
+  `/workout/interval/active?templateId=${encodeURIComponent(templateId)}` as Href;
+
 export default function IntervalWorkoutListScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,6 +118,10 @@ export default function IntervalWorkoutListScreen() {
                   value={formatDuration(template.cooldownDuration)}
                 />
               </View>
+
+              <Link asChild href={getActiveHref(template.id)}>
+                <Button label="Iniciar" variant="secondary" />
+              </Link>
             </Card>
           ))}
         </View>
