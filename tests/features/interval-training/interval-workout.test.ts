@@ -72,23 +72,25 @@ describe('interval workout helpers', () => {
     const summary = calculateIntervalWorkoutSegmentSummary({
       elapsedSeconds: 100,
       endedAt: '2026-07-02T12:01:40.000Z',
-      points: [
-        {
-          accuracy: 10,
-          altitude: null,
-          latitude: 0,
-          longitude: 0,
-          speed: null,
-          timestamp: '2026-07-02T12:00:00.000Z',
-        },
-        {
-          accuracy: 10,
-          altitude: null,
-          latitude: 0,
-          longitude: 0.0036,
-          speed: null,
-          timestamp: '2026-07-02T12:01:40.000Z',
-        },
+      pointGroups: [
+        [
+          {
+            accuracy: 10,
+            altitude: null,
+            latitude: 0,
+            longitude: 0,
+            speed: null,
+            timestamp: '2026-07-02T12:00:00.000Z',
+          },
+          {
+            accuracy: 10,
+            altitude: null,
+            latitude: 0,
+            longitude: 0.0036,
+            speed: null,
+            timestamp: '2026-07-02T12:01:40.000Z',
+          },
+        ],
       ],
       startedAt: '2026-07-02T12:00:00.000Z',
     });
@@ -128,6 +130,77 @@ describe('interval workout helpers', () => {
       elapsedSeconds: 120,
       progress: 1,
     });
+  });
+
+  it('does not connect segment distance across pause and resume', () => {
+    const firstPoint = {
+      accuracy: 10,
+      altitude: null,
+      latitude: 0,
+      longitude: 0,
+      speed: null,
+      timestamp: '2026-07-02T12:00:00.000Z',
+    };
+    const secondPoint = {
+      accuracy: 10,
+      altitude: null,
+      latitude: 0,
+      longitude: 0.0018,
+      speed: null,
+      timestamp: '2026-07-02T12:00:50.000Z',
+    };
+    const thirdPoint = {
+      accuracy: 10,
+      altitude: null,
+      latitude: 1,
+      longitude: 1,
+      speed: null,
+      timestamp: '2026-07-02T12:02:00.000Z',
+    };
+    const fourthPoint = {
+      accuracy: 10,
+      altitude: null,
+      latitude: 1,
+      longitude: 1.0018,
+      speed: null,
+      timestamp: '2026-07-02T12:02:50.000Z',
+    };
+    const runtime = appendIntervalSegmentRuntimePoint(
+      appendIntervalSegmentRuntimePoint(
+        resumeIntervalSegmentRuntime(
+          pauseIntervalSegmentRuntime(
+            appendIntervalSegmentRuntimePoint(
+              appendIntervalSegmentRuntimePoint(
+                createIntervalSegmentRuntime('2026-07-02T12:00:00.000Z'),
+                firstPoint,
+              ),
+              secondPoint,
+            ),
+            '2026-07-02T12:01:00.000Z',
+          ),
+          '2026-07-02T12:02:00.000Z',
+        ),
+        thirdPoint,
+      ),
+      fourthPoint,
+    );
+    const segment: IntervalEngineSegment = {
+      id: 'segment_1',
+      orderIndex: 1,
+      repetition: 1,
+      targetType: 'DISTANCE',
+      targetValue: 400,
+      type: 'RUN',
+    };
+
+    const metrics = calculateIntervalSegmentRuntimeMetrics(
+      segment,
+      runtime,
+      '2026-07-02T12:02:50.000Z',
+    );
+
+    expect(metrics.distanceMeters).toBeGreaterThan(390);
+    expect(metrics.distanceMeters).toBeLessThan(410);
   });
 
   it('calculates distance progress from runtime points', () => {

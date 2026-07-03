@@ -154,7 +154,7 @@ export default function FreeRunScreen() {
   );
 
   const syncOpenWorkout = useCallback(async () => {
-    const openWorkout = await WorkoutRepository.getOpenWorkout();
+    const openWorkout = await WorkoutRepository.getOpenWorkout('FREE_RUN');
 
     if (!openWorkout) {
       return;
@@ -276,20 +276,6 @@ export default function FreeRunScreen() {
       await stopTracking();
       await waitForPendingPointWrites();
 
-      const persistedPoints = await WorkoutRepository.getWorkoutPoints(
-        state.workoutId,
-      );
-
-      restoreActiveWorkout({
-        accumulatedElapsedSeconds: state.accumulatedElapsedSeconds,
-        activeStartedAt:
-          state.status === 'ACTIVE' ? state.activeStartedAt : null,
-        endedAt: state.endedAt,
-        points: persistedPoints.map(workoutPointToLocationPoint),
-        startedAt: state.startedAt,
-        status: state.status === 'ACTIVE' ? 'ACTIVE' : 'PAUSED',
-        workoutId: state.workoutId,
-      });
       finishWorkout(finishedAt);
 
       const finishedState = useActiveWorkoutStore.getState();

@@ -291,15 +291,17 @@ async function getActiveWorkout(): Promise<Workout | null> {
   });
 }
 
-async function getOpenWorkout(): Promise<Workout | null> {
+async function getOpenWorkout(type?: WorkoutType): Promise<Workout | null> {
   return withDatabase(async (database) => {
+    const typeFilter = type ? 'AND type = ?' : '';
+    const params = type ? ['ACTIVE', 'PAUSED', type] : ['ACTIVE', 'PAUSED'];
     const rows = await database.getAllAsync<WorkoutRow>(
       `SELECT * FROM ${TABLES.workouts}
        WHERE status IN (?, ?)
+       ${typeFilter}
        ORDER BY started_at DESC
        LIMIT 1;`,
-      'ACTIVE',
-      'PAUSED',
+      ...params,
     );
 
     const row = rows[0];

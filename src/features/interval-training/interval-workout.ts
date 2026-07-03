@@ -16,6 +16,7 @@ export type IntervalWorkoutSegmentSummary = Pick<
 export type IntervalSegmentRuntime = {
   accumulatedElapsedSeconds: number;
   activeStartedAt: string | null;
+  pointGroups: LocationPoint[][];
   points: LocationPoint[];
   startedAt: string;
 };
@@ -52,6 +53,7 @@ export function createIntervalSegmentRuntime(
   return {
     accumulatedElapsedSeconds: 0,
     activeStartedAt: startedAt,
+    pointGroups: [[]],
     points: [],
     startedAt,
   };
@@ -61,8 +63,11 @@ export function appendIntervalSegmentRuntimePoint(
   runtime: IntervalSegmentRuntime,
   point: LocationPoint,
 ): IntervalSegmentRuntime {
+  const pointGroups = appendPointToGroups(runtime.pointGroups, point);
+
   return {
     ...runtime,
+    pointGroups,
     points: [...runtime.points, point],
   };
 }
@@ -88,6 +93,11 @@ export function resumeIntervalSegmentRuntime(
   return {
     ...runtime,
     activeStartedAt: resumedAt,
+    pointGroups: runtime.pointGroups.at(-1)?.length
+      ? [...runtime.pointGroups, []]
+      : runtime.pointGroups.length > 0
+        ? runtime.pointGroups
+        : [[]],
   };
 }
 
@@ -110,7 +120,7 @@ export function calculateIntervalSegmentRuntimeMetrics(
   runtime: IntervalSegmentRuntime,
   now: string,
 ): IntervalSegmentRuntimeMetrics {
-  const distanceMeters = calculateTotalDistance(runtime.points);
+  const distanceMeters = calculateTotalDistanceFromGroups(runtime.pointGroups);
   const elapsedSeconds = getIntervalSegmentElapsedSeconds(runtime, now);
 
   return {
@@ -126,15 +136,15 @@ export function calculateIntervalSegmentRuntimeMetrics(
 export function calculateIntervalWorkoutSegmentSummary({
   endedAt,
   elapsedSeconds,
-  points,
+  pointGroups,
   startedAt,
 }: {
   endedAt: string;
   elapsedSeconds: number;
-  points: readonly LocationPoint[];
+  pointGroups: readonly LocationPoint[][];
   startedAt: string;
 }): IntervalWorkoutSegmentSummary {
-  const actualDistance = calculateTotalDistance(points);
+  const actualDistance = calculateTotalDistanceFromGroups(pointGroups);
   const actualDuration =
     Number.isFinite(elapsedSeconds) && elapsedSeconds > 0
       ? Math.round(elapsedSeconds)
@@ -147,6 +157,29 @@ export function calculateIntervalWorkoutSegmentSummary({
     endedAt,
     startedAt,
   };
+}
+
+function appendPointToGroups(
+  pointGroups: readonly LocationPoint[][],
+  point: LocationPoint,
+): LocationPoint[][] {
+  const groups =
+    pointGroups.length > 0 ? pointGroups.map((group) => [...group]) : [[]];
+  const latestGroup = groups.at(-1) ?? [];
+
+  groups[groups.length - 1] = [...latestGroup, point];
+
+  return groups;
+}
+
+function calculateTotalDistanceFromGroups(
+  pointGroups: readonly LocationPoint[][],
+): number {
+  return pointGroups.reduce(
+    (totalDistance, pointGroup) =>
+      totalDistance + calculateTotalDistance(pointGroup),
+    0,
+  );
 }
 
 function getElapsedSeconds(start: string, end: string): number {

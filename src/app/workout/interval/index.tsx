@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Link, useFocusEffect, type Href } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +18,9 @@ const getActiveHref = (templateId: string): Href =>
 
 export default function IntervalWorkoutListScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [templates, setTemplates] = useState<IntervalTemplate[]>([]);
 
@@ -40,6 +43,41 @@ export default function IntervalWorkoutListScreen() {
     useCallback(() => {
       void loadTemplates();
     }, [loadTemplates]),
+  );
+
+  const deleteTemplate = useCallback(
+    async (template: IntervalTemplate) => {
+      setDeletingTemplateId(template.id);
+      setErrorMessage(null);
+
+      try {
+        await IntervalTemplateRepository.deleteIntervalTemplate(template.id);
+        await loadTemplates();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Falha ao excluir treino.',
+        );
+      } finally {
+        setDeletingTemplateId(null);
+      }
+    },
+    [loadTemplates],
+  );
+
+  const confirmDeleteTemplate = useCallback(
+    (template: IntervalTemplate) => {
+      Alert.alert('Excluir treino', `Deseja excluir "${template.name}"?`, [
+        { style: 'cancel', text: 'Cancelar' },
+        {
+          onPress: () => {
+            void deleteTemplate(template);
+          },
+          style: 'destructive',
+          text: 'Excluir',
+        },
+      ]);
+    },
+    [deleteTemplate],
   );
 
   return (
@@ -119,9 +157,21 @@ export default function IntervalWorkoutListScreen() {
                 />
               </View>
 
-              <Link asChild href={getActiveHref(template.id)}>
-                <Button label="Iniciar" variant="secondary" />
-              </Link>
+              <View style={styles.actions}>
+                <Link asChild href={getActiveHref(template.id)}>
+                  <Button label="Iniciar" variant="secondary" />
+                </Link>
+                <Button
+                  disabled={deletingTemplateId === template.id}
+                  label={
+                    deletingTemplateId === template.id
+                      ? 'Excluindo...'
+                      : 'Excluir'
+                  }
+                  onPress={() => confirmDeleteTemplate(template)}
+                  variant="ghost"
+                />
+              </View>
             </Card>
           ))}
         </View>
@@ -146,6 +196,10 @@ function formatTarget(type: TargetType, value: number): string {
 }
 
 const styles = StyleSheet.create({
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   cardHeader: {
     gap: 4,
   },

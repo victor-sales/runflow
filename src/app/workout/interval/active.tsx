@@ -156,7 +156,7 @@ export default function ActiveIntervalWorkoutScreen() {
         calculateIntervalWorkoutSegmentSummary({
           elapsedSeconds: getIntervalSegmentElapsedSeconds(runtime, endedAt),
           endedAt,
-          points: runtime.points,
+          pointGroups: runtime.pointGroups,
           startedAt: runtime.startedAt,
         }),
       );
