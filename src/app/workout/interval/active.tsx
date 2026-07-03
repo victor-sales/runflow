@@ -36,7 +36,10 @@ import {
 } from '@/features/location/location.service';
 import type { LocationPoint } from '@/features/location/location.types';
 import { WorkoutRepository } from '@/features/workout/workout.repository';
-import type { SegmentType, WorkoutSegment } from '@/features/workout/workout.types';
+import type {
+  SegmentType,
+  WorkoutSegment,
+} from '@/features/workout/workout.types';
 import { useActiveWorkoutStore } from '@/store/active-workout.store';
 import { formatDistance, formatDuration, formatPace } from '@/utils/format';
 
@@ -220,7 +223,12 @@ export default function ActiveIntervalWorkoutScreen() {
         setIsSaving(false);
       }
     },
-    [finishWorkout, saveCurrentSegmentSummary, stopTracking, waitForPendingPointWrites],
+    [
+      finishWorkout,
+      saveCurrentSegmentSummary,
+      stopTracking,
+      waitForPendingPointWrites,
+    ],
   );
 
   const evaluateSegmentProgress = useCallback(
@@ -417,7 +425,10 @@ export default function ActiveIntervalWorkoutScreen() {
     await waitForPendingPointWrites();
 
     if (runtime) {
-      segmentRuntimeRef.current = pauseIntervalSegmentRuntime(runtime, pausedAt);
+      segmentRuntimeRef.current = pauseIntervalSegmentRuntime(
+        runtime,
+        pausedAt,
+      );
     }
 
     pauseWorkout(pausedAt);
@@ -517,7 +528,9 @@ export default function ActiveIntervalWorkoutScreen() {
       } catch (error) {
         if (isMounted) {
           setErrorMessage(
-            error instanceof Error ? error.message : 'Falha ao carregar treino.',
+            error instanceof Error
+              ? error.message
+              : 'Falha ao carregar treino.',
           );
         }
       } finally {
@@ -556,7 +569,9 @@ export default function ActiveIntervalWorkoutScreen() {
     [stopForegroundTracking],
   );
 
-  const currentEngineSegment = engineState ? getCurrentSegment(engineState) : null;
+  const currentEngineSegment = engineState
+    ? getCurrentSegment(engineState)
+    : null;
   const nextEngineSegment = engineState ? getNextSegment(engineState) : null;
   const canStart =
     status === 'IDLE' || status === 'CANCELED' || status === 'COMPLETED';

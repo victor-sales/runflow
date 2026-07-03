@@ -100,9 +100,7 @@ describe('interval workout helpers', () => {
   });
 
   it('tracks runtime elapsed seconds across pause and resume', () => {
-    const runtime = createIntervalSegmentRuntime(
-      '2026-07-02T12:00:00.000Z',
-    );
+    const runtime = createIntervalSegmentRuntime('2026-07-02T12:00:00.000Z');
     const pausedRuntime = pauseIntervalSegmentRuntime(
       runtime,
       '2026-07-02T12:01:00.000Z',

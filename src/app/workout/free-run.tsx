@@ -5,9 +5,7 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Screen } from '@/components/ui/Screen';
-import {
-  requestForegroundLocationPermission,
-} from '@/features/location/location-permissions';
+import { requestForegroundLocationPermission } from '@/features/location/location-permissions';
 import type { LocationPoint } from '@/features/location/location.types';
 import {
   startLocationTracking,
@@ -52,7 +50,9 @@ export default function FreeRunScreen() {
       const trackedPromise = promise
         .catch((error: unknown) => {
           setErrorMessage(
-            error instanceof Error ? error.message : 'Falha ao salvar ponto GPS.',
+            error instanceof Error
+              ? error.message
+              : 'Falha ao salvar ponto GPS.',
           );
         })
         .then(() => undefined);
@@ -69,23 +69,26 @@ export default function FreeRunScreen() {
     await Promise.allSettled([...pendingPointWritesRef.current]);
   }, []);
 
-  const handleLocationPoint = useCallback((point: LocationPoint) => {
-    const state = useActiveWorkoutStore.getState();
+  const handleLocationPoint = useCallback(
+    (point: LocationPoint) => {
+      const state = useActiveWorkoutStore.getState();
 
-    state.addPoint(point);
+      state.addPoint(point);
 
-    if (state.status !== 'ACTIVE' || !state.workoutId) {
-      return;
-    }
+      if (state.status !== 'ACTIVE' || !state.workoutId) {
+        return;
+      }
 
-    trackPointWrite(
-      WorkoutRepository.addWorkoutPoint({
-        ...point,
-        segmentId: null,
-        workoutId: state.workoutId,
-      }),
-    );
-  }, [trackPointWrite]);
+      trackPointWrite(
+        WorkoutRepository.addWorkoutPoint({
+          ...point,
+          segmentId: null,
+          workoutId: state.workoutId,
+        }),
+      );
+    },
+    [trackPointWrite],
+  );
 
   const stopForegroundTracking = useCallback(() => {
     trackingRequestIdRef.current += 1;
@@ -139,8 +142,7 @@ export default function FreeRunScreen() {
 
       restoreActiveWorkout({
         accumulatedElapsedSeconds: workout.totalDuration,
-        activeStartedAt:
-          workout.status === 'ACTIVE' ? workout.updatedAt : null,
+        activeStartedAt: workout.status === 'ACTIVE' ? workout.updatedAt : null,
         endedAt: workout.endedAt,
         points: persistedPoints.map(workoutPointToLocationPoint),
         startedAt: workout.startedAt,
@@ -280,7 +282,8 @@ export default function FreeRunScreen() {
 
       restoreActiveWorkout({
         accumulatedElapsedSeconds: state.accumulatedElapsedSeconds,
-        activeStartedAt: state.status === 'ACTIVE' ? state.activeStartedAt : null,
+        activeStartedAt:
+          state.status === 'ACTIVE' ? state.activeStartedAt : null,
         endedAt: state.endedAt,
         points: persistedPoints.map(workoutPointToLocationPoint),
         startedAt: state.startedAt,
@@ -466,7 +469,7 @@ function getStatusLabel(status: string, endedAt: string | null): string {
     return 'Treino cancelado.';
   }
 
-    return 'Inicie para capturar GPS e acompanhar metricas.';
+  return 'Inicie para capturar GPS e acompanhar metricas.';
 }
 
 function getGpsSignalLabel(signal: string): string {

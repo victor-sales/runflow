@@ -23,9 +23,11 @@ export type IntervalEngineState = {
   status: IntervalEngineStatus;
 };
 
-const clampProgress = (progress: number): number => Math.min(Math.max(progress, 0), 1);
+const clampProgress = (progress: number): number =>
+  Math.min(Math.max(progress, 0), 1);
 
-const isPositiveTarget = (value: number): boolean => Number.isFinite(value) && value > 0;
+const isPositiveTarget = (value: number): boolean =>
+  Number.isFinite(value) && value > 0;
 
 const createSegment = (
   type: SegmentType,
@@ -42,12 +44,22 @@ const createSegment = (
   type,
 });
 
-export const generateIntervalSegments = (template: IntervalTemplate): IntervalEngineSegment[] => {
+export const generateIntervalSegments = (
+  template: IntervalTemplate,
+): IntervalEngineSegment[] => {
   const segments: IntervalEngineSegment[] = [];
   let orderIndex = 0;
 
   if (template.warmupDuration > 0) {
-    segments.push(createSegment('WARMUP', orderIndex, null, 'TIME', template.warmupDuration));
+    segments.push(
+      createSegment(
+        'WARMUP',
+        orderIndex,
+        null,
+        'TIME',
+        template.warmupDuration,
+      ),
+    );
     orderIndex += 1;
   }
 
@@ -55,7 +67,13 @@ export const generateIntervalSegments = (template: IntervalTemplate): IntervalEn
 
   for (let repetition = 1; repetition <= shotsCount; repetition += 1) {
     segments.push(
-      createSegment('RUN', orderIndex, repetition, template.shotTargetType, template.shotTargetValue),
+      createSegment(
+        'RUN',
+        orderIndex,
+        repetition,
+        template.shotTargetType,
+        template.shotTargetValue,
+      ),
     );
     orderIndex += 1;
 
@@ -74,13 +92,23 @@ export const generateIntervalSegments = (template: IntervalTemplate): IntervalEn
   }
 
   if (template.cooldownDuration > 0) {
-    segments.push(createSegment('COOLDOWN', orderIndex, null, 'TIME', template.cooldownDuration));
+    segments.push(
+      createSegment(
+        'COOLDOWN',
+        orderIndex,
+        null,
+        'TIME',
+        template.cooldownDuration,
+      ),
+    );
   }
 
   return segments;
 };
 
-export const createIntervalEngine = (template: IntervalTemplate): IntervalEngineState => {
+export const createIntervalEngine = (
+  template: IntervalTemplate,
+): IntervalEngineState => {
   const segments = generateIntervalSegments(template);
 
   return {
@@ -100,7 +128,9 @@ export const getCurrentSegment = (
   return state.segments[state.currentSegmentIndex] ?? null;
 };
 
-export const getNextSegment = (state: IntervalEngineState): IntervalEngineSegment | null =>
+export const getNextSegment = (
+  state: IntervalEngineState,
+): IntervalEngineSegment | null =>
   state.segments[state.currentSegmentIndex + 1] ?? null;
 
 export const calculateSegmentProgress = (
@@ -112,7 +142,9 @@ export const calculateSegmentProgress = (
   }
 
   const currentValue =
-    segment.targetType === 'TIME' ? metrics.elapsedSeconds : metrics.distanceMeters;
+    segment.targetType === 'TIME'
+      ? metrics.elapsedSeconds
+      : metrics.distanceMeters;
 
   if (!Number.isFinite(currentValue) || currentValue <= 0) {
     return 0;
@@ -121,7 +153,9 @@ export const calculateSegmentProgress = (
   return clampProgress(currentValue / segment.targetValue);
 };
 
-export const advanceSegment = (state: IntervalEngineState): IntervalEngineState => {
+export const advanceSegment = (
+  state: IntervalEngineState,
+): IntervalEngineState => {
   if (state.status === 'COMPLETED') {
     return state;
   }
@@ -163,5 +197,6 @@ export const updateIntervalEngine = (
   return advanceSegment(state);
 };
 
-export const isIntervalWorkoutCompleted = (state: IntervalEngineState): boolean =>
-  state.status === 'COMPLETED';
+export const isIntervalWorkoutCompleted = (
+  state: IntervalEngineState,
+): boolean => state.status === 'COMPLETED';

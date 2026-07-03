@@ -195,13 +195,7 @@ type FormInputProps = TextInputProps & {
   name: FormInputName;
 };
 
-function FormInput({
-  control,
-  error,
-  label,
-  name,
-  ...props
-}: FormInputProps) {
+function FormInput({ control, error, label, name, ...props }: FormInputProps) {
   return (
     <View style={styles.field}>
       <AppText color="secondary" variant="caption">

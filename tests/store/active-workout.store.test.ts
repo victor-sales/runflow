@@ -91,18 +91,14 @@ describe('active workout store', () => {
     useActiveWorkoutStore
       .getState()
       .startWorkout('2026-07-02T12:00:00.000Z', 'workout_1');
-    useActiveWorkoutStore
-      .getState()
-      .pauseWorkout('2026-07-02T12:05:00.000Z');
+    useActiveWorkoutStore.getState().pauseWorkout('2026-07-02T12:05:00.000Z');
     useActiveWorkoutStore
       .getState()
       .refreshElapsedSeconds('2026-07-02T12:10:00.000Z');
 
     expect(useActiveWorkoutStore.getState().elapsedSeconds).toBe(300);
 
-    useActiveWorkoutStore
-      .getState()
-      .resumeWorkout('2026-07-02T12:10:00.000Z');
+    useActiveWorkoutStore.getState().resumeWorkout('2026-07-02T12:10:00.000Z');
     useActiveWorkoutStore
       .getState()
       .refreshElapsedSeconds('2026-07-02T12:12:00.000Z');

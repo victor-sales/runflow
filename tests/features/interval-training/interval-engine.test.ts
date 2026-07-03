@@ -12,7 +12,9 @@ import {
   updateIntervalEngine,
 } from '../../../src/features/interval-training/interval-engine';
 
-const createTemplate = (overrides: Partial<IntervalTemplate> = {}): IntervalTemplate => ({
+const createTemplate = (
+  overrides: Partial<IntervalTemplate> = {},
+): IntervalTemplate => ({
   cooldownDuration: 300,
   createdAt: '2026-07-02T12:00:00.000Z',
   id: 'template_1',
@@ -73,7 +75,9 @@ describe('interval engine', () => {
   });
 
   it('skips warmup when warmup duration is zero', () => {
-    const segments = generateIntervalSegments(createTemplate({ warmupDuration: 0 }));
+    const segments = generateIntervalSegments(
+      createTemplate({ warmupDuration: 0 }),
+    );
 
     expect(segments[0]).toMatchObject({
       id: 'segment_0',
@@ -83,7 +87,9 @@ describe('interval engine', () => {
   });
 
   it('skips cooldown when cooldown duration is zero', () => {
-    const segments = generateIntervalSegments(createTemplate({ cooldownDuration: 0 }));
+    const segments = generateIntervalSegments(
+      createTemplate({ cooldownDuration: 0 }),
+    );
 
     expect(segments.at(-1)).toMatchObject({
       repetition: 6,
@@ -96,7 +102,11 @@ describe('interval engine', () => {
       createTemplate({ cooldownDuration: 0, shotsCount: 2, warmupDuration: 0 }),
     );
 
-    expect(segments.map((segment) => segment.type)).toEqual(['RUN', 'REST', 'RUN']);
+    expect(segments.map((segment) => segment.type)).toEqual([
+      'RUN',
+      'REST',
+      'RUN',
+    ]);
   });
 
   it('calculates progress by time and advances segment', () => {
@@ -104,11 +114,17 @@ describe('interval engine', () => {
     const currentSegment = getCurrentSegment(state);
 
     expect(currentSegment).not.toBeNull();
-    expect(calculateSegmentProgress(currentSegment!, { distanceMeters: 0, elapsedSeconds: 300 })).toBe(
-      0.5,
-    );
+    expect(
+      calculateSegmentProgress(currentSegment!, {
+        distanceMeters: 0,
+        elapsedSeconds: 300,
+      }),
+    ).toBe(0.5);
 
-    const nextState = updateIntervalEngine(state, { distanceMeters: 0, elapsedSeconds: 600 });
+    const nextState = updateIntervalEngine(state, {
+      distanceMeters: 0,
+      elapsedSeconds: 600,
+    });
 
     expect(getCurrentSegment(nextState)).toMatchObject({
       repetition: 1,
@@ -126,10 +142,16 @@ describe('interval engine', () => {
 
     expect(currentSegment).not.toBeNull();
     expect(
-      calculateSegmentProgress(currentSegment!, { distanceMeters: 200, elapsedSeconds: 0 }),
+      calculateSegmentProgress(currentSegment!, {
+        distanceMeters: 200,
+        elapsedSeconds: 0,
+      }),
     ).toBe(0.5);
 
-    state = updateIntervalEngine(state, { distanceMeters: 400, elapsedSeconds: 0 });
+    state = updateIntervalEngine(state, {
+      distanceMeters: 400,
+      elapsedSeconds: 0,
+    });
 
     expect(getCurrentSegment(state)).toMatchObject({
       repetition: 1,

@@ -100,7 +100,11 @@ function getElapsedBetweenSeconds(start: string, end: string): number {
   const startSeconds = getTimestampSeconds(start);
   const endSeconds = getTimestampSeconds(end);
 
-  if (startSeconds === null || endSeconds === null || endSeconds <= startSeconds) {
+  if (
+    startSeconds === null ||
+    endSeconds === null ||
+    endSeconds <= startSeconds
+  ) {
     return 0;
   }
 
@@ -152,7 +156,8 @@ function appendPointToGroups(
   pointGroups: readonly LocationPoint[][],
   point: LocationPoint,
 ): LocationPoint[][] {
-  const groups = pointGroups.length > 0 ? pointGroups.map((group) => [...group]) : [[]];
+  const groups =
+    pointGroups.length > 0 ? pointGroups.map((group) => [...group]) : [[]];
   const latestGroup = groups.at(-1) ?? [];
 
   if (latestGroup.some((existingPoint) => isSamePoint(existingPoint, point))) {
@@ -190,7 +195,9 @@ function buildPointGroups(points: readonly LocationPoint[]): LocationPoint[][] {
       continue;
     }
 
-    if (!latestGroup.some((existingPoint) => isSamePoint(existingPoint, point))) {
+    if (
+      !latestGroup.some((existingPoint) => isSamePoint(existingPoint, point))
+    ) {
       latestGroup.push(point);
     }
   }
@@ -206,7 +213,9 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set) => ({
         return state;
       }
 
-      if (state.points.some((existingPoint) => isSamePoint(existingPoint, point))) {
+      if (
+        state.points.some((existingPoint) => isSamePoint(existingPoint, point))
+      ) {
         return state;
       }
 
@@ -262,7 +271,10 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set) => ({
         return state;
       }
 
-      return calculateMetrics(state.pointGroups, getElapsedSecondsAt(state, now));
+      return calculateMetrics(
+        state.pointGroups,
+        getElapsedSecondsAt(state, now),
+      );
     }),
   resetWorkout: () => set(initialState),
   restoreActiveWorkout: (input) =>
@@ -293,12 +305,11 @@ export const useActiveWorkoutStore = create<ActiveWorkoutStore>((set) => ({
 
       return {
         activeStartedAt: resumedAt,
-        pointGroups:
-          state.pointGroups.at(-1)?.length
-            ? [...state.pointGroups, []]
-            : state.pointGroups.length > 0
-              ? state.pointGroups
-              : [[]],
+        pointGroups: state.pointGroups.at(-1)?.length
+          ? [...state.pointGroups, []]
+          : state.pointGroups.length > 0
+            ? state.pointGroups
+            : [[]],
         status: 'ACTIVE',
       };
     }),

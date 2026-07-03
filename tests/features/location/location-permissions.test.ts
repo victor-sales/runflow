@@ -53,6 +53,8 @@ describe('location permissions', () => {
     });
 
     await expect(requestBackgroundLocationPermission()).resolves.toBe(false);
-    expect(locationMock.requestBackgroundPermissionsAsync).not.toHaveBeenCalled();
+    expect(
+      locationMock.requestBackgroundPermissionsAsync,
+    ).not.toHaveBeenCalled();
   });
 });
