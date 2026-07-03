@@ -1,14 +1,16 @@
 import * as Location from 'expo-location';
 
 import {
+  BACKGROUND_LOCATION_TASK_NAME,
+  MAX_LOCATION_ACCURACY_METERS,
+} from './location.constants';
+import {
   getLocationSignalQuality,
   getLocationSignalReason,
   type GpsSignalStatus,
   type LocationSignalQuality,
 } from './location-quality';
 import type { LocationPoint } from './location.types';
-
-const MAX_LOCATION_ACCURACY_METERS = 30;
 
 export type LocationPointHandler = (point: LocationPoint) => void;
 export type LocationTrackingErrorHandler = (message: string) => void;
@@ -141,6 +143,63 @@ export async function startLocationTracking(
         : 'Unable to start location tracking',
     );
     return null;
+  }
+}
+
+export async function startBackgroundLocationTracking(
+  onError?: LocationTrackingErrorHandler,
+): Promise<boolean> {
+  try {
+    const hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      BACKGROUND_LOCATION_TASK_NAME,
+    );
+
+    if (hasStarted) {
+      return true;
+    }
+
+    await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME, {
+      accuracy: Location.Accuracy.BestForNavigation,
+      activityType: Location.ActivityType.Fitness,
+      distanceInterval: 5,
+      foregroundService: {
+        notificationBody: 'Registrando sua corrida em segundo plano.',
+        notificationColor: '#0F172A',
+        notificationTitle: 'RunFlow em treino',
+      },
+      pausesUpdatesAutomatically: false,
+      showsBackgroundLocationIndicator: true,
+      timeInterval: 1000,
+    });
+
+    return true;
+  } catch (error) {
+    onError?.(
+      error instanceof Error
+        ? error.message
+        : 'Unable to start background location tracking',
+    );
+    return false;
+  }
+}
+
+export async function stopBackgroundLocationTracking(
+  onError?: LocationTrackingErrorHandler,
+): Promise<void> {
+  try {
+    const hasStarted = await Location.hasStartedLocationUpdatesAsync(
+      BACKGROUND_LOCATION_TASK_NAME,
+    );
+
+    if (hasStarted) {
+      await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK_NAME);
+    }
+  } catch (error) {
+    onError?.(
+      error instanceof Error
+        ? error.message
+        : 'Unable to stop background location tracking',
+    );
   }
 }
 

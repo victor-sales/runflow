@@ -1,23 +1,44 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
+import { WorkoutRepository } from '@/features/workout/workout.repository';
+
+import { BACKGROUND_LOCATION_TASK_NAME } from './location.constants';
 import { normalizeLocationPoint } from './location.service';
 import type { LocationPoint } from './location.types';
-
-export const BACKGROUND_LOCATION_TASK_NAME = 'runflow-background-location';
 
 type BackgroundLocationTaskData = {
   locations?: Location.LocationObject[];
 };
 
-export type BackgroundLocationPointHandler = (points: LocationPoint[]) => void;
+export type BackgroundLocationPointHandler = (
+  points: LocationPoint[],
+) => Promise<void> | void;
 
 function isLocationPoint(point: LocationPoint | null): point is LocationPoint {
   return point !== null;
 }
 
+async function saveBackgroundLocationPoints(
+  points: readonly LocationPoint[],
+): Promise<void> {
+  const activeWorkout = await WorkoutRepository.getActiveWorkout();
+
+  if (!activeWorkout) {
+    return;
+  }
+
+  await WorkoutRepository.addWorkoutPoints(
+    activeWorkout.id,
+    points.map((point) => ({
+      ...point,
+      segmentId: null,
+    })),
+  );
+}
+
 export function defineBackgroundLocationTask(
-  onPoints?: BackgroundLocationPointHandler,
+  onPoints: BackgroundLocationPointHandler = saveBackgroundLocationPoints,
 ): void {
   if (TaskManager.isTaskDefined(BACKGROUND_LOCATION_TASK_NAME)) {
     return;
@@ -35,8 +56,12 @@ export function defineBackgroundLocationTask(
         .filter(isLocationPoint);
 
       if (points.length > 0) {
-        onPoints?.(points);
+        await onPoints(points);
       }
     },
   );
 }
+
+defineBackgroundLocationTask();
+
+export { BACKGROUND_LOCATION_TASK_NAME };

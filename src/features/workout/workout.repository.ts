@@ -13,6 +13,8 @@ import type {
 } from '@/features/workout/workout.types';
 import { createId } from '@/utils/id';
 
+const POINT_COORDINATE_EPSILON = 0.0000001;
+
 type WorkoutRow = {
   id: string;
   type: WorkoutType;
@@ -87,6 +89,13 @@ export type CreateWorkoutSegmentInput = Omit<
   createdAt?: string;
   updatedAt?: string;
 };
+
+export type UpdateWorkoutSegmentInput = Partial<
+  Pick<
+    WorkoutSegment,
+    'actualDistance' | 'actualDuration' | 'avgPace' | 'endedAt' | 'startedAt'
+  >
+>;
 
 export type CreateCompletedWorkoutWithPointsInput = Omit<
   CreateWorkoutInput,
@@ -224,12 +233,78 @@ async function insertWorkoutPoint(
   );
 }
 
+async function hasWorkoutPoint(
+  database: Pick<SQLiteDatabase, 'getFirstAsync'>,
+  point: WorkoutPoint,
+): Promise<boolean> {
+  const row = await database.getFirstAsync<{ id: string }>(
+    `SELECT id FROM ${TABLES.workoutPoints}
+     WHERE workout_id = ?
+       AND timestamp = ?
+       AND ABS(latitude - ?) < ?
+       AND ABS(longitude - ?) < ?
+     LIMIT 1;`,
+    point.workoutId,
+    point.timestamp,
+    point.latitude,
+    POINT_COORDINATE_EPSILON,
+    point.longitude,
+    POINT_COORDINATE_EPSILON,
+  );
+
+  return row !== null;
+}
+
+async function insertWorkoutPointIfNew(
+  database: Pick<SQLiteDatabase, 'getFirstAsync' | 'runAsync'>,
+  point: WorkoutPoint,
+): Promise<void> {
+  if (await hasWorkoutPoint(database, point)) {
+    return;
+  }
+
+  await insertWorkoutPoint(database, point);
+}
+
 async function getWorkoutById(id: string): Promise<Workout | null> {
   return withDatabase(async (database) => {
     const row = await database.getFirstAsync<WorkoutRow>(
       `SELECT * FROM ${TABLES.workouts} WHERE id = ?;`,
       id,
     );
+
+    return row ? mapWorkoutRow(row) : null;
+  });
+}
+
+async function getActiveWorkout(): Promise<Workout | null> {
+  return withDatabase(async (database) => {
+    const row = await database.getFirstAsync<WorkoutRow>(
+      `SELECT * FROM ${TABLES.workouts}
+       WHERE status = ?
+       ORDER BY started_at DESC
+       LIMIT 1;`,
+      'ACTIVE',
+    );
+
+    return row ? mapWorkoutRow(row) : null;
+  });
+}
+
+async function getOpenWorkout(type?: WorkoutType): Promise<Workout | null> {
+  return withDatabase(async (database) => {
+    const typeFilter = type ? 'AND type = ?' : '';
+    const params = type ? ['ACTIVE', 'PAUSED', type] : ['ACTIVE', 'PAUSED'];
+    const rows = await database.getAllAsync<WorkoutRow>(
+      `SELECT * FROM ${TABLES.workouts}
+       WHERE status IN (?, ?)
+       ${typeFilter}
+       ORDER BY started_at DESC
+       LIMIT 1;`,
+      ...params,
+    );
+
+    const row = rows[0];
 
     return row ? mapWorkoutRow(row) : null;
   });
@@ -327,7 +402,7 @@ async function addWorkoutPoint(
 ): Promise<WorkoutPoint> {
   const point = buildWorkoutPoint(input, new Date().toISOString());
 
-  await withDatabase((database) => insertWorkoutPoint(database, point));
+  await withDatabase((database) => insertWorkoutPointIfNew(database, point));
 
   return point;
 }
@@ -346,7 +421,10 @@ async function addWorkoutPoints(
   await withDatabase((database) =>
     database.withTransactionAsync(async () => {
       for (const point of workoutPoints) {
-        await insertWorkoutPoint(database, buildWorkoutPoint(point, createdAt));
+        await insertWorkoutPointIfNew(
+          database,
+          buildWorkoutPoint(point, createdAt),
+        );
       }
     }),
   );
@@ -456,6 +534,53 @@ async function getWorkoutSegments(
   });
 }
 
+async function getWorkoutSegmentById(
+  id: string,
+): Promise<WorkoutSegment | null> {
+  return withDatabase(async (database) => {
+    const row = await database.getFirstAsync<WorkoutSegmentRow>(
+      `SELECT * FROM ${TABLES.workoutSegments} WHERE id = ?;`,
+      id,
+    );
+
+    return row ? mapWorkoutSegmentRow(row) : null;
+  });
+}
+
+async function updateWorkoutSegment(
+  id: string,
+  input: UpdateWorkoutSegmentInput,
+): Promise<WorkoutSegment | null> {
+  const current = await getWorkoutSegmentById(id);
+
+  if (!current) {
+    return null;
+  }
+
+  const updated: WorkoutSegment = {
+    ...current,
+    ...input,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await withDatabase((database) =>
+    database.runAsync(
+      `UPDATE ${TABLES.workoutSegments}
+       SET actual_distance = ?, actual_duration = ?, avg_pace = ?, started_at = ?, ended_at = ?, updated_at = ?
+       WHERE id = ?;`,
+      updated.actualDistance,
+      updated.actualDuration,
+      updated.avgPace,
+      updated.startedAt,
+      updated.endedAt,
+      updated.updatedAt,
+      id,
+    ),
+  );
+
+  return updated;
+}
+
 export const WorkoutRepository = {
   addWorkoutPoint,
   addWorkoutPoints,
@@ -465,9 +590,12 @@ export const WorkoutRepository = {
   createWorkout,
   deleteWorkout,
   finishWorkout,
+  getActiveWorkout,
+  getOpenWorkout,
   getWorkoutById,
   getWorkoutPoints,
   getWorkoutSegments,
   listCompletedWorkouts,
+  updateWorkoutSegment,
   updateWorkout,
 };

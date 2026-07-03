@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { runMigrations } from '@/database/migrate';
 
 import '../global.css';
+import '@/features/location/location-task';
 
 export default function RootLayout() {
   const [isDatabaseReady, setIsDatabaseReady] = useState(false);
@@ -67,6 +68,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="workout/interval/create"
           options={{ title: 'Criar Treino' }}
+        />
+        <Stack.Screen
+          name="workout/interval/active"
+          options={{ title: 'Treino Intervalado' }}
         />
         <Stack.Screen name="history/index" options={{ title: 'Historico' }} />
         <Stack.Screen name="history/[id]" options={{ title: 'Detalhe' }} />

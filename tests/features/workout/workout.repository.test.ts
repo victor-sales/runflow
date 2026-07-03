@@ -144,4 +144,147 @@ describe('workout repository mappers', () => {
       workoutId: 'workout_1',
     });
   });
+
+  it('gets the latest active workout', async () => {
+    const database = {
+      getFirstAsync: vi.fn().mockResolvedValue({
+        avg_pace: null,
+        created_at: '2026-07-02T12:00:00.000Z',
+        ended_at: null,
+        id: 'workout_1',
+        started_at: '2026-07-02T12:00:00.000Z',
+        status: 'ACTIVE',
+        total_distance: 0,
+        total_duration: 0,
+        type: 'FREE_RUN',
+        updated_at: '2026-07-02T12:00:00.000Z',
+      }),
+    } as unknown as DatabaseArgument;
+
+    vi.mocked(withDatabase).mockImplementation(async (callback) =>
+      callback(database),
+    );
+
+    await expect(WorkoutRepository.getActiveWorkout()).resolves.toMatchObject({
+      id: 'workout_1',
+      status: 'ACTIVE',
+    });
+  });
+
+  it('gets the latest open workout filtered by type', async () => {
+    const database = {
+      getAllAsync: vi.fn().mockResolvedValue([
+        {
+          avg_pace: null,
+          created_at: '2026-07-02T12:00:00.000Z',
+          ended_at: null,
+          id: 'workout_1',
+          started_at: '2026-07-02T12:00:00.000Z',
+          status: 'PAUSED',
+          total_distance: 1000,
+          total_duration: 360,
+          type: 'FREE_RUN',
+          updated_at: '2026-07-02T12:06:00.000Z',
+        },
+      ]),
+    } as unknown as DatabaseArgument;
+
+    vi.mocked(withDatabase).mockImplementation(async (callback) =>
+      callback(database),
+    );
+
+    await expect(
+      WorkoutRepository.getOpenWorkout('FREE_RUN'),
+    ).resolves.toMatchObject({
+      id: 'workout_1',
+      status: 'PAUSED',
+      type: 'FREE_RUN',
+    });
+
+    expect(database.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining('AND type = ?'),
+      'ACTIVE',
+      'PAUSED',
+      'FREE_RUN',
+    );
+  });
+
+  it('does not insert duplicated workout points', async () => {
+    const database = {
+      getFirstAsync: vi.fn().mockResolvedValue({ id: 'point_1' }),
+      runAsync: vi.fn(),
+    } as unknown as DatabaseArgument;
+
+    vi.mocked(withDatabase).mockImplementation(async (callback) =>
+      callback(database),
+    );
+
+    await WorkoutRepository.addWorkoutPoint({
+      accuracy: 10,
+      altitude: null,
+      latitude: -23,
+      longitude: -46,
+      segmentId: null,
+      speed: null,
+      timestamp: '2026-07-02T12:00:00.000Z',
+      workoutId: 'workout_1',
+    });
+
+    expect(database.runAsync).not.toHaveBeenCalled();
+  });
+
+  it('updates workout segment summary', async () => {
+    const database = {
+      getFirstAsync: vi.fn().mockResolvedValue({
+        actual_distance: 0,
+        actual_duration: 0,
+        avg_pace: null,
+        created_at: '2026-07-02T12:00:00.000Z',
+        ended_at: null,
+        id: 'segment_1',
+        order_index: 0,
+        repetition: 1,
+        started_at: '2026-07-02T12:00:00.000Z',
+        target_type: 'DISTANCE',
+        target_value: 400,
+        type: 'RUN',
+        updated_at: '2026-07-02T12:00:00.000Z',
+        workout_id: 'workout_1',
+      }),
+      runAsync: vi.fn().mockResolvedValue({
+        changes: 1,
+        lastInsertRowId: 1,
+      }),
+    } as unknown as DatabaseArgument;
+
+    vi.mocked(withDatabase).mockImplementation(async (callback) =>
+      callback(database),
+    );
+
+    await expect(
+      WorkoutRepository.updateWorkoutSegment('segment_1', {
+        actualDistance: 400,
+        actualDuration: 100,
+        avgPace: 250,
+        endedAt: '2026-07-02T12:01:40.000Z',
+      }),
+    ).resolves.toMatchObject({
+      actualDistance: 400,
+      actualDuration: 100,
+      avgPace: 250,
+      endedAt: '2026-07-02T12:01:40.000Z',
+      id: 'segment_1',
+    });
+
+    expect(database.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE workout_segments'),
+      400,
+      100,
+      250,
+      '2026-07-02T12:00:00.000Z',
+      '2026-07-02T12:01:40.000Z',
+      expect.any(String),
+      'segment_1',
+    );
+  });
 });

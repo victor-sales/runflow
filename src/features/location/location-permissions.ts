@@ -5,3 +5,15 @@ export async function requestForegroundLocationPermission(): Promise<boolean> {
 
   return permission.granted;
 }
+
+export async function requestBackgroundLocationPermission(): Promise<boolean> {
+  const foregroundPermission = await Location.getForegroundPermissionsAsync();
+
+  if (!foregroundPermission.granted) {
+    return false;
+  }
+
+  const permission = await Location.requestBackgroundPermissionsAsync();
+
+  return permission.granted;
+}

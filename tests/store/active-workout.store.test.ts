@@ -75,6 +75,56 @@ describe('active workout store', () => {
     );
   });
 
+  it('refreshes elapsed time from timestamps instead of incremental ticks', () => {
+    useActiveWorkoutStore
+      .getState()
+      .startWorkout('2026-07-02T12:00:00.000Z', 'workout_1');
+
+    useActiveWorkoutStore
+      .getState()
+      .refreshElapsedSeconds('2026-07-02T12:05:00.000Z');
+
+    expect(useActiveWorkoutStore.getState().elapsedSeconds).toBe(300);
+  });
+
+  it('keeps elapsed time stable while paused and resumes from accumulated time', () => {
+    useActiveWorkoutStore
+      .getState()
+      .startWorkout('2026-07-02T12:00:00.000Z', 'workout_1');
+    useActiveWorkoutStore.getState().pauseWorkout('2026-07-02T12:05:00.000Z');
+    useActiveWorkoutStore
+      .getState()
+      .refreshElapsedSeconds('2026-07-02T12:10:00.000Z');
+
+    expect(useActiveWorkoutStore.getState().elapsedSeconds).toBe(300);
+
+    useActiveWorkoutStore.getState().resumeWorkout('2026-07-02T12:10:00.000Z');
+    useActiveWorkoutStore
+      .getState()
+      .refreshElapsedSeconds('2026-07-02T12:12:00.000Z');
+
+    expect(useActiveWorkoutStore.getState().elapsedSeconds).toBe(420);
+  });
+
+  it('deduplicates repeated gps points', () => {
+    const point = {
+      accuracy: 10,
+      altitude: null,
+      latitude: 0,
+      longitude: 0,
+      speed: null,
+      timestamp: '2026-07-02T12:00:00.000Z',
+    };
+
+    useActiveWorkoutStore
+      .getState()
+      .startWorkout('2026-07-02T12:00:00.000Z', 'workout_1');
+    useActiveWorkoutStore.getState().addPoint(point);
+    useActiveWorkoutStore.getState().addPoint(point);
+
+    expect(useActiveWorkoutStore.getState().points).toHaveLength(1);
+  });
+
   it('does not connect points across pause and resume', () => {
     useActiveWorkoutStore.getState().startWorkout('2026-07-02T12:00:00.000Z');
     useActiveWorkoutStore.getState().updateMetrics(20);
