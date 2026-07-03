@@ -214,6 +214,10 @@ export default function ActiveIntervalWorkoutScreen() {
           totalDistance: finishedState.distanceMeters,
           totalDuration: finishedState.elapsedSeconds,
         });
+        router.replace({
+          params: { id: state.workoutId },
+          pathname: '/workout/summary/[id]',
+        });
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Falha ao salvar treino.',

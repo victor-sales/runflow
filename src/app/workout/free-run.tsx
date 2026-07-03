@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import { Alert, AppState, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/ui/AppText';
@@ -285,6 +286,10 @@ export default function FreeRunScreen() {
         endedAt: finishedAt,
         totalDistance: finishedState.distanceMeters,
         totalDuration: finishedState.elapsedSeconds,
+      });
+      router.replace({
+        params: { id: state.workoutId },
+        pathname: '/workout/summary/[id]',
       });
     } catch (error) {
       setErrorMessage(
