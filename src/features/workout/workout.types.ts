@@ -15,6 +15,7 @@ export type Workout = {
   totalDistance: number;
   totalDuration: number;
   avgPace: number | null;
+  routeSnapshotUri: string | null;
   createdAt: string;
   updatedAt: string;
 };

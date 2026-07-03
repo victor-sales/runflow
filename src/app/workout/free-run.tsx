@@ -6,6 +6,10 @@ import { AppText } from '@/components/ui/AppText';
 import { Button } from '@/components/ui/Button';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { Screen } from '@/components/ui/Screen';
+import {
+  WorkoutMap,
+  type WorkoutMapHandle,
+} from '@/components/workout/WorkoutMap';
 import { requestForegroundLocationPermission } from '@/features/location/location-permissions';
 import type { LocationPoint } from '@/features/location/location.types';
 import {
@@ -13,6 +17,7 @@ import {
   stopLocationTracking,
   type LocationTrackingSubscription,
 } from '@/features/location/location.service';
+import { saveRouteSnapshot } from '@/features/workout/route-snapshot.service';
 import { WorkoutRepository } from '@/features/workout/workout.repository';
 import type { Workout, WorkoutPoint } from '@/features/workout/workout.types';
 import { useActiveWorkoutStore } from '@/store/active-workout.store';
@@ -22,6 +27,7 @@ export default function FreeRunScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTrackingStarting, setIsTrackingStarting] = useState(false);
   const isTrackingStartingRef = useRef(false);
+  const mapRef = useRef<WorkoutMapHandle | null>(null);
   const pendingPointWritesRef = useRef<Set<Promise<void>>>(new Set());
   const subscriptionRef = useRef<LocationTrackingSubscription | null>(null);
   const trackingRequestIdRef = useRef(0);
@@ -38,6 +44,7 @@ export default function FreeRunScreen() {
     cancelWorkout,
     finishWorkout,
     pauseWorkout,
+    points,
     resetWorkout,
     restoreActiveWorkout,
     resumeWorkout,
@@ -69,6 +76,19 @@ export default function FreeRunScreen() {
   const waitForPendingPointWrites = useCallback(async () => {
     await Promise.allSettled([...pendingPointWritesRef.current]);
   }, []);
+
+  const captureRouteSnapshot = useCallback(
+    async (workoutId: string): Promise<string | null> => {
+      try {
+        const snapshotUri = (await mapRef.current?.takeSnapshot()) ?? null;
+
+        return saveRouteSnapshot(workoutId, snapshotUri);
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
 
   const handleLocationPoint = useCallback(
     (point: LocationPoint) => {
@@ -280,10 +300,12 @@ export default function FreeRunScreen() {
       finishWorkout(finishedAt);
 
       const finishedState = useActiveWorkoutStore.getState();
+      const routeSnapshotUri = await captureRouteSnapshot(state.workoutId);
 
       await WorkoutRepository.finishWorkout(state.workoutId, {
         avgPace: finishedState.averagePace,
         endedAt: finishedAt,
+        routeSnapshotUri,
         totalDistance: finishedState.distanceMeters,
         totalDuration: finishedState.elapsedSeconds,
       });
@@ -355,6 +377,8 @@ export default function FreeRunScreen() {
         <MetricCard label="Pace atual" value={formatPace(currentPace)} />
         <MetricCard label="Pace medio" value={formatPace(averagePace)} />
       </View>
+
+      <WorkoutMap points={points} ref={mapRef} />
 
       {errorMessage ? (
         <AppText color="secondary" variant="caption">
