@@ -102,11 +102,11 @@ export const WorkoutMap = forwardRef<WorkoutMapHandle, WorkoutMapProps>(
             ref={mapRef}
             style={styles.map}
           >
-          <Polyline
-            coordinates={coordinates}
-            strokeColor="#2563eb"
-            strokeWidth={4}
-          />
+            <Polyline
+              coordinates={coordinates}
+              strokeColor="#2563eb"
+              strokeWidth={4}
+            />
           </MapView>
         </View>
       </Card>
